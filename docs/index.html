@@ -153,6 +153,7 @@
     <label>Día<select name="dia"></select></label>
     <div class="botones">
       <button type="button" class="boton peligro" id="btnBorrar" hidden>Borrar parada</button>
+      <button type="button" class="boton secundario" id="btnMover" hidden>📍 Mover en el mapa</button>
       <button type="button" class="boton secundario" id="btnCancelar">Cancelar</button>
       <button type="submit" class="boton">Guardar</button>
     </div>
@@ -224,6 +225,7 @@ let editando = null;      // parada que se edita
 let nuevoPunto = null;    // {lat,lng} para parada nueva
 let modo = null;          // {tipo:'dibujo'|'ajuste'|'alternativas', a, b, cfg, puntos, opciones, elegida}
 let ultimoDelDia = [], ultimasHoras = [];
+let featuresParadas = [];
 
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (t) => String(t ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -349,6 +351,7 @@ function montar() {
     pintar();
   });
   mapa.on("click", (e) => {
+    if (window.__seAcabaDeArrastrar?.()) return; // el clic que viene al soltar no abre nada
     if (modo) { clicEnModo({ lat: e.lngLat.lat, lng: e.lngLat.lng }); return; }
     const toc = mapa.queryRenderedFeatures([[e.point.x - 14, e.point.y - 14], [e.point.x + 14, e.point.y + 14]], { layers: ["paradas"] });
     if (toc.length) { const p = paradas.find(x => x.id === toc[0].properties.id); if (p) abrirEditar(p); return; }
@@ -367,6 +370,44 @@ function montar() {
   $("#btnCancelar").onclick = () => $("#dlgParada").close();
   $("#formParada").onsubmit = guardarParada;
   $("#btnBorrar").onclick = borrarParada;
+  $("#btnMover").onclick = () => {
+    const p = editando; $("#dlgParada").close();
+    modo = { tipo: "mover", parada: p, a: p, b: p, puntos: [] };
+    pintar();
+  };
+
+  // Arrastrar paradas (ratón y dedo)
+  let arrastre = null, ultimoArrastre = 0;
+  const empezarArrastre = (e) => {
+    if (modo || !e.features?.length) return;
+    if (e.type === "touchstart" && e.points?.length !== 1) return;
+    e.preventDefault(); // que no se mueva el mapa mientras arrastras
+    arrastre = { id: e.features[0].properties.id, inicio: e.point, movido: false, lngLat: e.lngLat };
+    mapa.getCanvas().style.cursor = "grabbing";
+    const mover = (ev) => {
+      if (!arrastre) return;
+      if (Math.hypot(ev.point.x - arrastre.inicio.x, ev.point.y - arrastre.inicio.y) > 4) arrastre.movido = true;
+      arrastre.lngLat = ev.lngLat;
+      const datos = { type: "FeatureCollection", features: featuresParadas.map(f => f.properties.id === arrastre.id
+        ? { ...f, geometry: { type: "Point", coordinates: [ev.lngLat.lng, ev.lngLat.lat] } } : f) };
+      mapa.getSource("paradas").setData(datos);
+    };
+    const soltar = async () => {
+      mapa.off(e.type === "touchstart" ? "touchmove" : "mousemove", mover);
+      mapa.getCanvas().style.cursor = "";
+      const a = arrastre; arrastre = null;
+      if (!a?.movido) return;
+      ultimoArrastre = Date.now();
+      await updateDoc(doc(db, "viajes", viajeId, "paradas", a.id), { lat: a.lngLat.lat, lng: a.lngLat.lng });
+    };
+    mapa.on(e.type === "touchstart" ? "touchmove" : "mousemove", mover);
+    mapa.once(e.type === "touchstart" ? "touchend" : "mouseup", soltar);
+  };
+  mapa.on("mousedown", "paradas", empezarArrastre);
+  mapa.on("touchstart", "paradas", empezarArrastre);
+  mapa.on("mouseenter", "paradas", () => { if (!arrastre) mapa.getCanvas().style.cursor = "grab"; });
+  mapa.on("mouseleave", "paradas", () => { if (!arrastre) mapa.getCanvas().style.cursor = ""; });
+  window.__seAcabaDeArrastrar = () => Date.now() - ultimoArrastre < 400;
   $("#btnCancelarTramo").onclick = () => $("#dlgTramo").close();
   $("#formTramo").onsubmit = (e) => { e.preventDefault(); guardarTramo(configFormulario()); $("#dlgTramo").close(); };
   $("#btnCerrarSug").onclick = () => $("#dlgSugerencias").close();
@@ -582,8 +623,9 @@ async function pintar() {
 
   // Mapa
   if (mapaListo) {
-    mapa.getSource("paradas").setData({ type: "FeatureCollection", features: delDia.map(p => ({
-      type: "Feature", geometry: { type: "Point", coordinates: [p.lng, p.lat] }, properties: { id: p.id, orden: p.orden, visitada: !!p.visitada } })) });
+    featuresParadas = delDia.map(p => ({
+      type: "Feature", geometry: { type: "Point", coordinates: [p.lng, p.lat] }, properties: { id: p.id, orden: p.orden, visitada: !!p.visitada } }));
+    mapa.getSource("paradas").setData({ type: "FeatureCollection", features: featuresParadas });
     mapa.getSource("rutas").setData({ type: "FeatureCollection", features: tramos.flatMap(t => t.lineas.filter(l => l.coords.length >= 2).map(l => ({
       type: "Feature", geometry: { type: "LineString", coordinates: l.coords }, properties: { tipo: l.tipo, calc: l.calc } }))) });
     if (encuadradoDia !== dia && delDia.length) {
@@ -611,6 +653,7 @@ function abrirNueva(punto, nombre) {
   f.nombre.value = nombre; f.minutos.value = ""; f.notas.value = "";
   rellenarDias(f.dia, dia);
   $("#btnBorrar").hidden = true;
+  $("#btnMover").hidden = true;
   $("#dlgParada").showModal();
 }
 function abrirEditar(p) {
@@ -621,6 +664,7 @@ function abrirEditar(p) {
   f.nombre.value = p.nombre || ""; f.minutos.value = p.minutosVisita || ""; f.notas.value = p.notas || "";
   rellenarDias(f.dia, p.dia || 1);
   $("#btnBorrar").hidden = false;
+  $("#btnMover").hidden = false;
   $("#dlgParada").showModal();
 }
 async function guardarParada(e) {
@@ -813,6 +857,11 @@ function insertarPorDonde(a, b, lista, nuevo) {
 }
 
 function clicEnModo(punto) {
+  if (modo.tipo === "mover") {
+    const p = modo.parada; terminarModo();
+    updateDoc(doc(db, "viajes", viajeId, "paradas", p.id), { lat: punto.lat, lng: punto.lng });
+    return;
+  }
   if (modo.tipo === "dibujo") modo.puntos.push(punto);
   else if (modo.tipo === "ajuste") modo.puntos = insertarPorDonde(modo.a, modo.b, modo.puntos, punto);
   else return;
@@ -823,6 +872,12 @@ function pintarBarraModo() {
   const barra = $("#barraModo");
   if (!modo) { barra.hidden = true; return; }
   barra.hidden = false;
+  if (modo.tipo === "mover") {
+    barra.innerHTML = `<b>📍 Mover «${esc(modo.parada.nombre)}»</b><p>Toca en el mapa el sitio nuevo de la parada.</p>
+      <div class="botones"><button type="button" class="boton secundario" id="mCancelar">Cancelar</button></div>`;
+    $("#mCancelar").onclick = terminarModo;
+    return;
+  }
   const tit = `${esc(modo.a.nombre)} → ${esc(modo.b.nombre)}`;
   if (modo.tipo === "alternativas") {
     const ops = modo.opciones;
