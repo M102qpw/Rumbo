@@ -334,7 +334,7 @@ function montar() {
       <section class="panel">
         <div class="resumen" id="resumen"></div>
         <ol class="paradas" id="lista"></ol>
-        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 7 (vuelos y reservas)</p>
+        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 8 (mover copias)</p>
       </section>
     </div>
   </div>`;
@@ -412,7 +412,7 @@ function montar() {
       const a = arrastre; arrastre = null;
       if (!a?.movido) return;
       ultimoArrastre = Date.now();
-      await updateDoc(doc(db, "viajes", viajeId, "paradas", a.id), { lat: a.lngLat.lat, lng: a.lngLat.lng });
+      await moverParada(a.id, a.lngLat.lat, a.lngLat.lng);
     };
     mapa.on(e.type === "touchstart" ? "touchmove" : "mousemove", mover);
     mapa.once(e.type === "touchstart" ? "touchend" : "mouseup", soltar);
@@ -726,6 +726,19 @@ async function borrarParada() {
     .forEach((x, i) => { if (x.orden !== i + 1) lote.update(doc(db, "viajes", viajeId, "paradas", x.id), { orden: i + 1 }); });
   await lote.commit();
 }
+/** Mueve una parada; si tiene copias (mismo nombre y sitio, p. ej. el hotel en cada día), pregunta si moverlas todas. */
+async function moverParada(id, lat, lng) {
+  const p = paradas.find(x => x.id === id);
+  const copias = p ? paradas.filter(x => x.id !== p.id && (x.nombre || "").trim().toLowerCase() === (p.nombre || "").trim().toLowerCase()
+    && distancia(x, p) < 150) : [];
+  const lote = writeBatch(db);
+  lote.update(doc(db, "viajes", viajeId, "paradas", id), { lat, lng });
+  if (copias.length && confirm(`«${p.nombre}» aparece ${copias.length} ${copias.length === 1 ? "vez más" : "veces más"} en el viaje. ¿Mover también todas las copias al sitio nuevo?`)) {
+    copias.forEach(c => lote.update(doc(db, "viajes", viajeId, "paradas", c.id), { lat, lng }));
+  }
+  await lote.commit();
+}
+
 function guardarOrden(lista) {
   const lote = writeBatch(db); let cambios = 0;
   lista.forEach((p, i) => { if (p.orden !== i + 1) { lote.update(doc(db, "viajes", viajeId, "paradas", p.id), { orden: i + 1 }); cambios++; } });
@@ -893,7 +906,7 @@ function insertarPorDonde(a, b, lista, nuevo) {
 function clicEnModo(punto) {
   if (modo.tipo === "mover") {
     const p = modo.parada; terminarModo();
-    updateDoc(doc(db, "viajes", viajeId, "paradas", p.id), { lat: punto.lat, lng: punto.lng });
+    moverParada(p.id, punto.lat, punto.lng);
     return;
   }
   if (modo.tipo === "dibujo") modo.puntos.push(punto);
