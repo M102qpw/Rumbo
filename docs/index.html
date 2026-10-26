@@ -243,8 +243,21 @@ const esc = (t) => String(t ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<"
 const raiz = $("#raiz");
 
 // ---------- Formatos ----------
-const fMin = (m) => { m = Math.max(0, Math.round(m)); const h = Math.floor(m / 60), r = m % 60; return h === 0 ? `${r} min` : r === 0 ? `${h} h` : `${h} h ${r} min`; };
-const fDist = (m) => m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1).replace(".", ",")} km`;
+// Tiempo como lo diría una persona: 30 min · 4 h · 2 h 15 min · 1 día 3 h
+const fMin = (m) => {
+  m = Math.max(0, Math.round(m));
+  if (m < 60) return `${m} min`;
+  if (m >= 1440) { const d = Math.floor(m / 1440), h = Math.floor((m % 1440 + 30) / 60), dd = d === 1 ? "1 día" : `${d} días`; return h ? `${dd} ${h} h` : dd; }
+  const h = Math.floor(m / 60), r = m % 60; return r === 0 ? `${h} h` : `${h} h ${r} min`;
+};
+// Distancia como la diría una persona: 50 m · 850 m · 1 km · 3 km 900 m · 20 km 600 m
+const fDist = (m) => {
+  m = Math.max(0, m);
+  if (m < 5) return "0 m";
+  if (m < 995) return `${Math.max(10, Math.round(m / 10) * 10)} m`;
+  const total = Math.round(m / 100) * 100, km = Math.floor(total / 1000), resto = total % 1000;
+  return resto ? `${km} km ${resto} m` : `${km} km`;
+};
 const fHora = (m) => { m = ((Math.round(m) % 1440) + 1440) % 1440; return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`; };
 const leerHora = (t) => { if (!t || !/^\d{1,2}:\d{2}$/.test(t)) return null; const [h, m] = t.split(":").map(Number); return h * 60 + m; };
 const distancia = (a, b) => {
@@ -337,7 +350,7 @@ function montar() {
       <section class="panel">
         <div class="resumen" id="resumen"></div>
         <ol class="paradas" id="lista"></ol>
-        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 10 (días visibles)</p>
+        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 11 (km y horas)</p>
       </section>
     </div>
   </div>`;
@@ -505,9 +518,9 @@ async function calcularTramo(a, b) {
       ? conCamino.map(p => ({ coords: p.puntos.map(coord).map(q => [q.lng, q.lat]), tipo: p.tipo, calc: true }))
       : [{ coords: recta, tipo: (pasos.find(p => p.tipo !== "andando") || {}).tipo || "andando", calc: false }];
     return {
-      tipo, metros: distancia(a, b), segundos: total, aPieM: aPie.reduce((x, p) => x + (p.metros || 0), 0), aPieS: aPie.reduce((x, p) => x + (p.minutos || 0), 0) * 60,
+      tipo, metros: distancia(a, b), segundos: total, aPieM: aPie.reduce((x, p) => x + (p.metros || (p.minutos || 0) * 75), 0), aPieS: aPie.reduce((x, p) => x + (p.minutos || 0), 0) * 60,
       lineas, fija: leerHora(c.horaSalida),
-      texto: pasos.map(p => `${ICONO[p.tipo] || "•"} ${p.tipo === "andando" || !p.linea ? (p.minutos || 0) + "′" : esc(p.linea)}`).join(" › ") + ` · ${fMin(total / 60)}`,
+      texto: pasos.map(p => `${ICONO[p.tipo] || "•"} ${p.tipo === "andando" || !p.linea ? fMin(p.minutos || 0) : esc(p.linea)}`).join(" › ") + ` · ${fMin(total / 60)}`,
       sub: c.horaSalida ? `Sale ${c.horaSalida}` : ""
     };
   }
@@ -1087,7 +1100,7 @@ async function buscarTransporte(a, b) {
     html += opciones.map((o, k) => `<button type="button" class="opcion" data-op="${k}">
       <span class="horas">${o.salida} → ${o.llegada}</span> <span class="nota">${fMin(o.total)}, ${o.transbordos === 0 ? "directo" : o.transbordos === 1 ? "1 transbordo" : o.transbordos + " transbordos"}</span>
       ${o.directo ? `<small>${o.directo}</small>` : ""}
-      <div class="pasos">${o.pasos.map(p => `${ICONO[p.tipo]} ${p.tipo === "andando" ? p.minutos + "′" : esc(p.linea || NOMBRE[p.tipo])}`).join(" › ")}</div>
+      <div class="pasos">${o.pasos.map(p => `${ICONO[p.tipo]} ${p.tipo === "andando" ? fMin(p.minutos) : esc(p.linea || NOMBRE[p.tipo])}`).join(" › ")}</div>
       ${o.pasos.filter(p => p.tipo !== "andando").map(p => `<small>${ICONO[p.tipo]} ${esc(p.linea)}${p.hacia ? ` (hacia ${esc(p.hacia)})` : ""}: ${p.horaSalida} ${esc(p.desde)} → ${p.horaLlegada} ${esc(p.hasta)}</small>`).join("")}
     </button>`).join("");
     caja.innerHTML = html;
