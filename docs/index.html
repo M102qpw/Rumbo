@@ -35,25 +35,19 @@
   button { cursor: pointer; }
   :focus-visible { outline: 3px solid var(--terracota); outline-offset: 2px; }
 
-  .app { display: grid; grid-template-rows: auto auto 1fr; height: 100dvh; }
-  header { padding: 8px 18px 2px; }
-  @media (max-width: 899px) { header h1 { font-size: 1.5rem; } .quien { display: none; } }
-  header h1 { margin: 0; font-size: clamp(1.6rem, 5vw, 2.3rem); font-weight: 700; letter-spacing: -.02em; line-height: 1.05; }
-  .quien { margin: 4px 0 0; color: var(--suave); font-size: .9rem; }
+  .app { display: grid; grid-template-rows: auto 1fr; height: 100dvh; }
+  /* Cabecera en una sola línea: título + selector de día */
+  header.barra { display: flex; align-items: center; gap: 10px 14px; padding: 6px 12px; flex-wrap: wrap; border-bottom: 1px solid var(--linea); }
+  header.barra h1 { margin: 0; font-size: 1.25rem; font-weight: 700; letter-spacing: -.01em; line-height: 1.1; flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .quien { margin: 0; color: var(--suave); font-size: .85rem; }
+  @media (max-width: 899px) { .quien { display: none; } }
+  .selector-dia { display: flex; align-items: center; gap: 4px; }
+  .selector-dia button { width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid var(--linea); background: var(--superficie); font-size: 1.1rem; line-height: 1; }
+  .selector-dia button:disabled { opacity: .3; cursor: default; }
+  .selector-dia select { border: 1.5px solid var(--oliva); background: var(--oliva-claro); border-radius: 999px; padding: 6px 12px; font-weight: 600; max-width: 62vw; }
 
-  .dias { display: flex; gap: 8px; overflow-x: auto; padding: 8px 18px 10px; scrollbar-width: none; }
-  /* En ordenador los días bajan de línea en vez de esconderse por la derecha */
-  @media (min-width: 700px) { .dias { flex-wrap: wrap; overflow-x: visible; } }
-  .dias button {
-    border: 1.5px solid var(--linea); background: transparent; border-radius: 999px;
-    padding: 6px 14px; white-space: nowrap;
-  }
-  .dias button[aria-pressed="true"] { background: var(--oliva-claro); border-color: var(--oliva); font-weight: 600; }
-
-  .cuerpo { display: grid; grid-template-rows: 62vh 1fr; min-height: 0; }
-  @media (min-width: 900px) { .cuerpo { grid-template-rows: none; grid-template-columns: 1fr 440px; } }
-
-  .mapa-caja { position: relative; min-height: 0; }
+  .cuerpo { position: relative; min-height: 0; }
+  .mapa-caja { position: absolute; inset: 0; }
   #mapa { position: absolute; inset: 0; }
   .buscador { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 2; max-width: 460px; }
   .buscador input {
@@ -69,8 +63,28 @@
     background: var(--superficie); padding: 7px 14px; border-radius: 999px; box-shadow: var(--sombra); font-size: .9rem;
   }
 
-  .panel { overflow-y: auto; min-height: 0; border-top: 1px solid var(--linea); background: var(--papel); }
-  @media (min-width: 900px) { .panel { border-top: 0; border-left: 1px solid var(--linea); } }
+  /* Panel de la lista: flota encima del mapa y se puede plegar */
+  .panel { position: absolute; z-index: 4; background: var(--papel); overflow-y: auto; box-shadow: var(--sombra); transition: transform .25s ease; }
+  .asa { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 12px 6px 18px; cursor: pointer; user-select: none; }
+  .asa .raya { width: 40px; height: 5px; border-radius: 3px; background: var(--linea); margin: 0 auto; }
+  .asa button { border: 0; background: transparent; font-size: 1rem; padding: 4px 8px; border-radius: 8px; }
+  .boton-lista { position: absolute; z-index: 3; top: 10px; right: 10px; border: 0; border-radius: 999px; padding: 9px 16px; background: var(--superficie); box-shadow: var(--sombra); font-weight: 600; }
+  @media (min-width: 900px) {
+    .panel { top: 10px; right: 10px; bottom: 10px; width: 420px; border-radius: 18px; }
+    .panel.cerrado { transform: translateX(calc(100% + 20px)); }
+    .asa .raya { display: none; }
+    .panel:not(.cerrado) ~ .boton-lista { display: none; }
+  }
+  @media (max-width: 899px) {
+    /* Móvil: hoja que asoma por abajo; se sube tocando o deslizando la rayita */
+    .panel { left: 0; right: 0; bottom: 0; height: 72vh; border-radius: 18px 18px 0 0; }
+    .panel.cerrado { transform: translateY(calc(72vh - 118px)); overflow: hidden; }
+    .asa { justify-content: center; padding: 8px; }
+    .asa button { display: none; }
+    .boton-lista { display: none; }
+    .pista { bottom: 130px !important; }
+    .barra-modo { bottom: 130px !important; }
+  }
 
   .resumen { position: sticky; top: 0; z-index: 1; background: var(--terracota-claro); padding: 10px 18px; font-size: .92rem; }
   .resumen .fila { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
@@ -335,8 +349,14 @@ function pedirNombre() {
 function montar() {
   raiz.innerHTML = `
   <div class="app">
-    <header><h1 id="titulo"></h1><p class="quien" id="quien"></p></header>
-    <nav class="dias" id="dias" aria-label="Días del viaje"></nav>
+    <header class="barra">
+      <h1 id="titulo"></h1><p class="quien" id="quien"></p>
+      <div class="selector-dia" id="selectorDia">
+        <button type="button" id="diaAnt" aria-label="Día anterior">‹</button>
+        <select id="selDia" aria-label="Día del viaje"></select>
+        <button type="button" id="diaSig" aria-label="Día siguiente">›</button>
+      </div>
+    </header>
     <div class="cuerpo">
       <div class="mapa-caja">
         <div id="mapa"></div>
@@ -347,11 +367,13 @@ function montar() {
         <div class="pista" id="pista">Toca el mapa para añadir una parada</div>
         <div class="barra-modo" id="barraModo" hidden></div>
       </div>
-      <section class="panel">
+      <section class="panel" id="panel">
+        <div class="asa" id="asa" title="Mostrar u ocultar la lista"><span class="raya"></span><button type="button" id="cerrarPanel" aria-label="Ocultar la lista">✕ Ocultar lista</button></div>
         <div class="resumen" id="resumen"></div>
         <ol class="paradas" id="lista"></ol>
-        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 12 (editar copias)</p>
+        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 13 (mapa grande)</p>
       </section>
+      <button type="button" class="boton-lista" id="abrirPanel">☰ Ver la lista</button>
     </div>
   </div>`;
 
@@ -360,7 +382,35 @@ function montar() {
     style: "https://tiles.openfreemap.org/styles/liberty",
     center: [-3.7038, 40.4168], zoom: 12, attributionControl: { compact: true }
   });
-  mapa.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
+  mapa.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-left");
+
+  // Panel de la lista: abierto en ordenador, plegado en el móvil
+  const panel = $("#panel");
+  const esMovil = () => matchMedia("(max-width: 899px)").matches;
+  if (esMovil()) panel.classList.add("cerrado");
+  const ponerPanel = (abierto) => panel.classList.toggle("cerrado", !abierto);
+  $("#abrirPanel").onclick = () => ponerPanel(true);
+  $("#cerrarPanel").onclick = (e) => { e.stopPropagation(); ponerPanel(false); };
+  $("#asa").onclick = () => { if (esMovil()) ponerPanel(panel.classList.contains("cerrado")); };
+  // Deslizar la rayita hacia arriba/abajo en el móvil
+  let yInicio = null;
+  $("#asa").addEventListener("touchstart", (e) => { yInicio = e.touches[0].clientY; }, { passive: true });
+  $("#asa").addEventListener("touchend", (e) => {
+    if (yInicio == null) return;
+    const dy = e.changedTouches[0].clientY - yInicio; yInicio = null;
+    if (dy < -30) ponerPanel(true); else if (dy > 30) ponerPanel(false);
+  });
+  window.__plegarPanelMovil = () => { if (esMovil()) ponerPanel(false); };
+  window.__margenesMapa = () => {
+    const abierto = !panel.classList.contains("cerrado");
+    return esMovil() ? { top: 70, bottom: 150, left: 40, right: 40 }
+      : { top: 70, bottom: 50, left: 60, right: abierto ? 470 : 60 };
+  };
+
+  // Selector de día
+  $("#selDia").onchange = (e) => { dia = +e.target.value; pintar(); };
+  $("#diaAnt").onclick = () => { if (dia > 1) { dia--; pintar(); } };
+  $("#diaSig").onclick = () => { if (dia < (viaje?.numDias || 1)) { dia++; pintar(); } };
   mapa.on("load", () => {
     mapa.addSource("rutas", { type: "geojson", data: vacio() });
     mapa.addSource("paradas", { type: "geojson", data: vacio() });
@@ -551,12 +601,11 @@ async function pintar() {
   const nombres = Object.values(viaje.nombres || {});
   $("#quien").textContent = nombres.length ? `Con ${nombres.join(", ")}` : "";
 
-  const nav = $("#dias");
-  nav.innerHTML = numDias > 1 ? Array.from({ length: numDias }, (_, i) => `<button type="button" aria-pressed="${i + 1 === dia}" data-d="${i + 1}">${etiquetaDia(i + 1)}</button>`).join("") : "";
-  nav.querySelectorAll("button").forEach(b => b.onclick = () => { dia = +b.dataset.d; pintar(); });
-  nav.querySelector('[aria-pressed="true"]')?.scrollIntoView({ block: "nearest", inline: "center" });
-  // Rueda del ratón = desplazamiento horizontal en la fila de días
-  nav.onwheel = (e) => { if (nav.scrollWidth > nav.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) { nav.scrollLeft += e.deltaY; e.preventDefault(); } };
+  $("#selectorDia").hidden = numDias < 2;
+  $("#selDia").innerHTML = Array.from({ length: numDias }, (_, i) =>
+    `<option value="${i + 1}" ${i + 1 === dia ? "selected" : ""}>${etiquetaDia(i + 1)}</option>`).join("");
+  $("#diaAnt").disabled = dia <= 1;
+  $("#diaSig").disabled = dia >= numDias;
 
   const delDia = paradas.filter(p => (p.dia || 1) === dia).sort((x, y) => (x.orden || 0) - (y.orden || 0));
   $("#pista").hidden = delDia.length > 0 || !!modo;
@@ -657,7 +706,7 @@ async function pintar() {
     lista.querySelectorAll("[data-ir]").forEach(b => b.onclick = () => {
       const p = paradas.find(x => x.id === b.dataset.ir); if (!p) return;
       mapa.flyTo({ center: [p.lng, p.lat], zoom: 17, duration: 700 });
-      document.querySelector(".mapa-caja").scrollIntoView({ behavior: "smooth", block: "start" });
+      window.__plegarPanelMovil?.();
     });
     lista.querySelectorAll("[data-editar]").forEach(b => b.onclick = () => abrirEditar(paradas.find(x => x.id === b.dataset.editar)));
     lista.querySelectorAll("[data-visto]").forEach(c => c.onchange = () =>
@@ -682,7 +731,7 @@ async function pintar() {
       else {
         const b = new maplibregl.LngLatBounds();
         delDia.forEach(p => b.extend([p.lng, p.lat]));
-        mapa.fitBounds(b, { padding: 60, duration: 600 });
+        mapa.fitBounds(b, { padding: window.__margenesMapa?.() ?? 60, duration: 600 });
       }
     }
   }
