@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rumbo · viaje compartido</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗺️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<style>
+  :root {
+    --papel: #FBF7F2; --tinta: #2B2622; --suave: #6E645B; --linea: #E6DDD2;
+    --terracota: #C2553D; --terracota-claro: #F6DCD3; --oliva: #2E7D5B; --oliva-claro: #D5EADF;
+    --superficie: #FFFFFF; --sombra: 0 6px 24px rgba(43,38,34,.12);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --papel: #1C1916; --tinta: #EDE3DA; --suave: #B5AA9F; --linea: #3A342F;
+      --terracota: #F0A08B; --terracota-claro: #5A2A1E; --oliva: #8FD3B0; --oliva-claro: #1F3B2E;
+      --superficie: #26221E; --sombra: 0 6px 24px rgba(0,0,0,.4);
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--papel); color: var(--tinta); font-size: 16px; line-height: 1.45;
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--terracota); outline-offset: 2px; }
+
+  .app { display: grid; grid-template-rows: auto auto 1fr; height: 100dvh; }
+  header { padding: 14px 18px 6px; }
+  header h1 { margin: 0; font-size: clamp(1.6rem, 5vw, 2.3rem); font-weight: 700; letter-spacing: -.02em; line-height: 1.05; }
+  .quien { margin: 4px 0 0; color: var(--suave); font-size: .9rem; }
+
+  .dias { display: flex; gap: 8px; overflow-x: auto; padding: 8px 18px 10px; scrollbar-width: none; }
+  .dias button {
+    border: 1.5px solid var(--linea); background: transparent; border-radius: 999px;
+    padding: 6px 14px; white-space: nowrap;
+  }
+  .dias button[aria-pressed="true"] { background: var(--oliva-claro); border-color: var(--oliva); font-weight: 600; }
+
+  .cuerpo { display: grid; grid-template-rows: 46vh 1fr; min-height: 0; }
+  @media (min-width: 900px) { .cuerpo { grid-template-rows: none; grid-template-columns: 1fr 440px; } }
+
+  .mapa-caja { position: relative; min-height: 0; }
+  #mapa { position: absolute; inset: 0; }
+  .buscador { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 2; max-width: 460px; }
+  .buscador input {
+    width: 100%; border: none; border-radius: 999px; padding: 11px 18px;
+    background: var(--superficie); box-shadow: var(--sombra);
+  }
+  .resultados { margin-top: 6px; background: var(--superficie); border-radius: 14px; box-shadow: var(--sombra); overflow: hidden; }
+  .resultados button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 10px 16px; border-top: 1px solid var(--linea); }
+  .resultados button:first-child { border-top: 0; }
+  .resultados small { display: block; color: var(--suave); }
+  .pista {
+    position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); z-index: 2;
+    background: var(--superficie); padding: 7px 14px; border-radius: 999px; box-shadow: var(--sombra); font-size: .9rem;
+  }
+
+  .panel { overflow-y: auto; min-height: 0; border-top: 1px solid var(--linea); background: var(--papel); }
+  @media (min-width: 900px) { .panel { border-top: 0; border-left: 1px solid var(--linea); } }
+
+  .resumen { position: sticky; top: 0; z-index: 1; background: var(--terracota-claro); padding: 10px 18px; font-size: .92rem; }
+  .resumen .fila { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+  .resumen label { display: inline-flex; align-items: center; gap: 6px; }
+  .resumen input[type=time] { border: 1px solid var(--linea); border-radius: 8px; padding: 2px 6px; background: var(--superficie); }
+
+  ol.paradas { list-style: none; margin: 0; padding: 0 0 80px; }
+  .parada { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: start; padding: 12px 14px 10px 14px; }
+  .num {
+    width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--terracota); color: #fff; font-weight: 700; font-size: .9rem; border: 2px solid #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,.2);
+  }
+  .parada.visitada .num { background: var(--oliva); }
+  .parada.visitada .nombre { text-decoration: line-through; color: var(--suave); }
+  .nombre { font-weight: 600; font-size: 1.05rem; border: 0; background: none; padding: 0; text-align: left; }
+  .detalle { color: var(--suave); font-size: .88rem; margin-top: 2px; }
+  .acciones { display: flex; gap: 2px; align-items: center; }
+  .acciones button, .icono {
+    width: 34px; height: 34px; border-radius: 10px; border: 0; background: transparent; font-size: 1rem;
+  }
+  .acciones button:hover:not(:disabled) { background: var(--linea); }
+  .acciones button:disabled { opacity: .25; cursor: default; }
+  .visto { margin-top: 6px; display: inline-flex; gap: 6px; align-items: center; font-size: .88rem; color: var(--suave); }
+  .tramo { margin: 0 14px 0 54px; padding: 4px 0 8px; color: var(--suave); font-size: .85rem; border-left: 2px dashed var(--linea); padding-left: 14px; }
+  .tramo b { font-weight: 600; color: var(--tinta); }
+  .vacio { padding: 28px 18px; color: var(--suave); }
+
+  dialog {
+    border: 0; border-radius: 22px; padding: 22px; width: min(420px, 92vw);
+    background: var(--superficie); color: var(--tinta); box-shadow: var(--sombra);
+  }
+  dialog::backdrop { background: rgba(28,25,22,.45); }
+  dialog h2 { margin: 0 0 14px; font-size: 1.3rem; }
+  dialog label { display: block; font-size: .85rem; color: var(--suave); margin-top: 10px; }
+  dialog input, dialog textarea, dialog select {
+    width: 100%; margin-top: 4px; padding: 10px 12px; border: 1.5px solid var(--linea); border-radius: 12px; background: var(--papel);
+  }
+  .botones { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; flex-wrap: wrap; }
+  .boton { border: 0; border-radius: 999px; padding: 9px 18px; background: var(--terracota); color: #fff; font-weight: 600; }
+  @media (prefers-color-scheme: dark) { .boton { color: #2B1208; } }
+  .boton.secundario { background: transparent; color: var(--tinta); border: 1.5px solid var(--linea); }
+  .boton.peligro { background: transparent; color: #C0392B; margin-right: auto; padding-left: 0; }
+  .centro { display: grid; place-items: center; height: 100dvh; padding: 24px; text-align: center; }
+  .centro p { max-width: 34ch; color: var(--suave); }
+  .atribucion { padding: 6px 18px 24px; font-size: .75rem; color: var(--suave); }
+  .atribucion a { color: inherit; }
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+<div id="raiz"><div class="centro"><p>Abriendo el viaje…</p></div></div>
+
+<dialog id="dlgParada">
+  <form method="dialog" id="formParada">
+    <h2 id="tituloParada">Nueva parada</h2>
+    <label>Nombre<input name="nombre" required autocomplete="off"></label>
+    <label>Tiempo de visita (minutos)<input name="minutos" type="number" min="0" max="999" inputmode="numeric"></label>
+    <label>Notas<textarea name="notas" rows="2"></textarea></label>
+    <label>Día<select name="dia"></select></label>
+    <div class="botones">
+      <button type="button" class="boton peligro" id="btnBorrar" hidden>Borrar parada</button>
+      <button type="button" class="boton secundario" id="btnCancelar">Cancelar</button>
+      <button type="submit" class="boton">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlgNombre">
+  <form method="dialog" id="formNombre">
+    <h2>¿Cómo te llamas?</h2>
+    <p style="margin:0;color:var(--suave)">Así los demás sabrán quién se ha unido al viaje.</p>
+    <label>Tu nombre<input name="nombre" required autocomplete="given-name"></label>
+    <div class="botones"><button type="submit" class="boton">Entrar al viaje</button></div>
+  </form>
+</dialog>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {
+  getFirestore, doc, getDoc, updateDoc, onSnapshot, collection, addDoc, writeBatch,
+  arrayUnion, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+// Configuración web del proyecto Rumbo en Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyCcjkUvDliUsW31se-rAlXUxZT2WPZ-NHg",
+  authDomain: "rumbo-70cd2.firebaseapp.com",
+  projectId: "rumbo-70cd2",
+  storageBucket: "rumbo-70cd2.firebasestorage.app",
+  messagingSenderId: "972946933469",
+  appId: "1:972946933469:web:e46ebd5d5763ee62c23d34"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// ---------- Estado ----------
+let uid = null, viajeId = null, viaje = null, paradas = [], dia = 1;
+let mapa = null, mapaListo = false, encuadradoDia = null;
+const rutasCache = new Map();
+let editando = null;      // parada que se edita
+let nuevoPunto = null;    // {lat,lng} para parada nueva
+
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (t) => String(t ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const raiz = $("#raiz");
+
+// ---------- Formatos ----------
+const fMin = (m) => { m = Math.max(0, Math.round(m)); const h = Math.floor(m / 60), r = m % 60; return h === 0 ? `${r} min` : r === 0 ? `${h} h` : `${h} h ${r} min`; };
+const fDist = (m) => m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1).replace(".", ",")} km`;
+const fHora = (m) => { m = ((Math.round(m) % 1440) + 1440) % 1440; return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`; };
+const leerHora = (t) => { if (!t || !/^\d{1,2}:\d{2}$/.test(t)) return null; const [h, m] = t.split(":").map(Number); return h * 60 + m; };
+const distancia = (a, b) => {
+  const R = 6371000, r = (x) => x * Math.PI / 180;
+  const dLat = r(b.lat - a.lat), dLng = r(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(r(a.lat)) * Math.cos(r(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+};
+const coord = (g) => ({ lat: g.latitude ?? g.lat, lng: g.longitude ?? g.lng });
+
+const ICONO = { andando: "🚶", pasaje: "🪜", bus: "🚌", metro: "🚇", tren: "🚆", tranvia: "🚊", taxi: "🚕", barco: "⛴️", ruta: "🔀" };
+const NOMBRE = { andando: "Andando", pasaje: "Pasaje", bus: "Bus", metro: "Metro", tren: "Tren", tranvia: "Tranvía", taxi: "Taxi", barco: "Barco", ruta: "Varios pasos" };
+const COLOR = { andando: "#C2553D", pasaje: "#8C6A4F", bus: "#2F6DB5", metro: "#6B4FA0", tren: "#3D7A3D", tranvia: "#D08A1E", taxi: "#C9A100", barco: "#1E8A9A" };
+const esPublico = (t) => ["bus", "metro", "tren", "tranvia", "barco"].includes(t);
+
+// ---------- Arranque ----------
+const codigo = (new URLSearchParams(location.search).get("v") || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+if (!codigo) {
+  raiz.innerHTML = `<div class="centro"><div><h1>Rumbo</h1><p>Abre el enlace que te han enviado para ver el viaje, o escribe aquí su código.</p>
+    <form id="fCodigo"><input name="c" maxlength="9" placeholder="ABCD EFGH" style="padding:10px 14px;border-radius:12px;border:1.5px solid var(--linea);text-transform:uppercase;text-align:center;font-size:1.3rem"> <button class="boton">Abrir</button></form></div></div>`;
+  $("#fCodigo").addEventListener("submit", (e) => {
+    e.preventDefault();
+    location.search = "?v=" + e.target.c.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  });
+} else {
+  onAuthStateChanged(auth, async (u) => {
+    if (!u) { signInAnonymously(auth).catch(mostrarError); return; }
+    if (uid) return;
+    uid = u.uid;
+    try { await entrar(); } catch (e) { mostrarError(e); }
+  });
+}
+
+function mostrarError(e) {
+  console.error(e);
+  raiz.innerHTML = `<div class="centro"><div><h1>No se ha podido abrir el viaje</h1>
+    <p>Comprueba que el enlace está completo y que tienes conexión. Si sigue sin ir, pide a quien te lo envió un enlace nuevo.</p></div></div>`;
+}
+
+async function entrar() {
+  const inv = await getDoc(doc(db, "invitaciones", codigo));
+  if (!inv.exists()) throw new Error("Código no válido");
+  viajeId = inv.data().viajeId;
+  const ref = doc(db, "viajes", viajeId);
+  await updateDoc(ref, { miembros: arrayUnion(uid), codigoUsado: codigo });
+
+  let nombre = localStorage.getItem("rumbo-nombre");
+  if (!nombre) nombre = await pedirNombre();
+  localStorage.setItem("rumbo-nombre", nombre);
+  updateDoc(ref, { [`nombres.${uid}`]: nombre }).catch(console.warn);
+
+  montar();
+  onSnapshot(ref, (s) => { viaje = s.data(); if (!viaje) return; pintar(); });
+  onSnapshot(collection(ref, "paradas"), (s) => {
+    paradas = s.docs.map(d => ({ id: d.id, ...d.data() }));
+    pintar();
+  });
+}
+
+function pedirNombre() {
+  return new Promise((resolver) => {
+    const dlg = $("#dlgNombre");
+    $("#formNombre").onsubmit = (e) => { e.preventDefault(); const n = e.target.nombre.value.trim(); if (n) { dlg.close(); resolver(n); } };
+    dlg.showModal();
+  });
+}
+
+// ---------- Estructura ----------
+function montar() {
+  raiz.innerHTML = `
+  <div class="app">
+    <header><h1 id="titulo"></h1><p class="quien" id="quien"></p></header>
+    <nav class="dias" id="dias" aria-label="Días del viaje"></nav>
+    <div class="cuerpo">
+      <div class="mapa-caja">
+        <div id="mapa"></div>
+        <div class="buscador">
+          <input id="busca" type="search" placeholder="Buscar un sitio para añadir" autocomplete="off" aria-label="Buscar un sitio">
+          <div class="resultados" id="resultados" hidden></div>
+        </div>
+        <div class="pista" id="pista">Toca el mapa para añadir una parada</div>
+      </div>
+      <section class="panel">
+        <div class="resumen" id="resumen"></div>
+        <ol class="paradas" id="lista"></ol>
+        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon</p>
+      </section>
+    </div>
+  </div>`;
+
+  mapa = new maplibregl.Map({
+    container: "mapa",
+    style: "https://tiles.openfreemap.org/styles/liberty",
+    center: [-3.7038, 40.4168], zoom: 12, attributionControl: { compact: true }
+  });
+  mapa.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
+  mapa.on("load", () => {
+    mapa.addSource("rutas", { type: "geojson", data: vacio() });
+    mapa.addSource("paradas", { type: "geojson", data: vacio() });
+    const colorPorTipo = ["match", ["get", "tipo"], ...Object.entries(COLOR).flat(), "#C2553D"];
+    mapa.addLayer({ id: "ruta", type: "line", source: "rutas", filter: ["==", ["get", "calc"], true],
+      layout: { "line-join": "round", "line-cap": "round" }, paint: { "line-color": colorPorTipo, "line-width": 4, "line-opacity": .85 } });
+    mapa.addLayer({ id: "ruta-recta", type: "line", source: "rutas", filter: ["==", ["get", "calc"], false],
+      layout: { "line-cap": "round" }, paint: { "line-color": colorPorTipo, "line-width": 3, "line-opacity": .6, "line-dasharray": [2, 1.5] } });
+    mapa.addLayer({ id: "paradas", type: "circle", source: "paradas",
+      paint: { "circle-radius": 12, "circle-color": ["case", ["get", "visitada"], "#2E7D5B", "#C2553D"], "circle-stroke-width": 2.5, "circle-stroke-color": "#fff" } });
+    mapa.addLayer({ id: "numeros", type: "symbol", source: "paradas",
+      layout: { "text-field": ["to-string", ["get", "orden"]], "text-font": ["Noto Sans Bold"], "text-size": 12, "text-allow-overlap": true, "text-ignore-placement": true },
+      paint: { "text-color": "#fff" } });
+    mapaListo = true;
+    pintar();
+  });
+  mapa.on("click", (e) => {
+    const toc = mapa.queryRenderedFeatures([[e.point.x - 14, e.point.y - 14], [e.point.x + 14, e.point.y + 14]], { layers: ["paradas"] });
+    if (toc.length) { const p = paradas.find(x => x.id === toc[0].properties.id); if (p) abrirEditar(p); return; }
+    abrirNueva({ lat: e.lngLat.lat, lng: e.lngLat.lng }, "");
+  });
+
+  // Buscador (Photon, mientras escribes)
+  let temporizador = null;
+  $("#busca").addEventListener("input", (e) => {
+    clearTimeout(temporizador);
+    const q = e.target.value.trim();
+    if (q.length < 3) { $("#resultados").hidden = true; return; }
+    temporizador = setTimeout(() => buscar(q), 450);
+  });
+
+  $("#btnCancelar").onclick = () => $("#dlgParada").close();
+  $("#formParada").onsubmit = guardarParada;
+  $("#btnBorrar").onclick = borrarParada;
+}
+
+const vacio = () => ({ type: "FeatureCollection", features: [] });
+
+async function buscar(q) {
+  const c = mapa.getCenter();
+  try {
+    const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=6&lat=${c.lat}&lon=${c.lng}`);
+    const j = await r.json();
+    const caja = $("#resultados");
+    caja.innerHTML = j.features.map((f, i) => {
+      const p = f.properties;
+      const nombre = p.name || [p.street, p.housenumber].filter(Boolean).join(" ") || "Sin nombre";
+      const detalle = [p.street, p.city, p.country].filter(x => x && x !== nombre).join(", ");
+      return `<button type="button" data-i="${i}">📍 ${esc(nombre)}<small>${esc(detalle)}</small></button>`;
+    }).join("") || `<button type="button" disabled>No hay resultados</button>`;
+    caja.hidden = false;
+    caja.querySelectorAll("button[data-i]").forEach(b => b.onclick = () => {
+      const f = j.features[+b.dataset.i];
+      const [lng, lat] = f.geometry.coordinates;
+      caja.hidden = true; $("#busca").value = "";
+      mapa.flyTo({ center: [lng, lat], zoom: 16 });
+      abrirNueva({ lat, lng }, f.properties.name || "");
+    });
+  } catch { $("#resultados").innerHTML = `<button type="button" disabled>No se pudo buscar. ¿Tienes conexión?</button>`; $("#resultados").hidden = false; }
+}
+
+// ---------- Tramos ----------
+function configDe(a, b) { return a.tramo && a.tramo.destinoId === b.id ? a.tramo : null; }
+
+async function rutaAPie(a, b, porDonde = [], alt = 0) {
+  const pts = [{ lat: a.lat, lng: a.lng }, ...porDonde, { lat: b.lat, lng: b.lng }];
+  const clave = pts.map(p => `${p.lat.toFixed(6)},${p.lng.toFixed(6)}`).join(";") + "#" + alt;
+  if (rutasCache.has(clave)) return rutasCache.get(clave);
+  const coords = pts.map(p => `${p.lng.toFixed(6)},${p.lat.toFixed(6)}`).join(";");
+  const pedirAlt = alt > 0 && porDonde.length === 0;
+  const r = await fetch(`https://routing.openstreetmap.de/routed-foot/route/v1/driving/${coords}?overview=full&geometries=geojson${pedirAlt ? "&alternatives=3" : ""}`);
+  const j = await r.json();
+  if (j.code !== "Ok") throw new Error("sin ruta");
+  const ruta = j.routes[pedirAlt ? Math.min(alt, j.routes.length - 1) : 0];
+  const res = { metros: ruta.distance, segundos: ruta.duration, coords: ruta.geometry.coordinates };
+  rutasCache.set(clave, res);
+  return res;
+}
+
+async function calcularTramo(a, b) {
+  const c = configDe(a, b);
+  const tipo = c?.tipo || "andando";
+  const recta = [[a.lng, a.lat], [b.lng, b.lat]];
+  if (tipo === "andando") {
+    try {
+      const r = await rutaAPie(a, b, (c?.porDonde || []).map(coord), c?.alternativa || 0);
+      return { tipo, metros: r.metros, segundos: r.segundos, aPieM: r.metros, aPieS: r.segundos, lineas: [{ coords: r.coords, tipo, calc: true }],
+        texto: `${fDist(r.metros)} · ${fMin(r.segundos / 60)}` };
+    } catch {
+      const m = distancia(a, b) * 1.3;
+      return { tipo, metros: m, segundos: m / 1.25, aPieM: m, aPieS: m / 1.25, lineas: [{ coords: recta, tipo, calc: false }], texto: `≈ ${fDist(m)} · ${fMin(m / 75)}` };
+    }
+  }
+  if (tipo === "pasaje") {
+    const camino = [{ lat: a.lat, lng: a.lng }, ...(c.puntos || []).map(coord), { lat: b.lat, lng: b.lng }];
+    let m = 0; for (let i = 1; i < camino.length; i++) m += distancia(camino[i - 1], camino[i]);
+    const s = c.minutos > 0 ? c.minutos * 60 : m / 1.25;
+    return { tipo, metros: m, segundos: s, aPieM: m, aPieS: s, lineas: [{ coords: camino.map(p => [p.lng, p.lat]), tipo, calc: true }],
+      texto: `Pasaje · ${fDist(m)} · ${fMin(s / 60)}` };
+  }
+  if (tipo === "ruta") {
+    const pasos = c.pasos || [];
+    const total = (pasos.reduce((x, p) => x + (p.minutos || 0), 0) + (c.esperaMin || 0)) * 60;
+    const aPie = pasos.filter(p => p.tipo === "andando");
+    const conCamino = pasos.filter(p => (p.puntos || []).length >= 2);
+    const lineas = conCamino.length
+      ? conCamino.map(p => ({ coords: p.puntos.map(coord).map(q => [q.lng, q.lat]), tipo: p.tipo, calc: true }))
+      : [{ coords: recta, tipo: (pasos.find(p => p.tipo !== "andando") || {}).tipo || "andando", calc: false }];
+    return {
+      tipo, metros: distancia(a, b), segundos: total, aPieM: aPie.reduce((x, p) => x + (p.metros || 0), 0), aPieS: aPie.reduce((x, p) => x + (p.minutos || 0), 0) * 60,
+      lineas, fija: leerHora(c.horaSalida),
+      texto: pasos.map(p => `${ICONO[p.tipo] || "•"} ${p.tipo === "andando" || !p.linea ? (p.minutos || 0) + "′" : esc(p.linea)}`).join(" › ") + ` · ${fMin(total / 60)}`,
+      sub: c.horaSalida ? `Sale ${c.horaSalida}` : ""
+    };
+  }
+  // bus, metro, tren, tranvía, taxi (a mano)
+  const espera = esPublico(tipo) ? (c.frecuencia || 0) / 2 : 0;
+  const s = ((c.minutos || 0) + espera) * 60;
+  return {
+    tipo, metros: distancia(a, b), segundos: s, aPieM: 0, aPieS: 0, lineas: [{ coords: recta, tipo, calc: false }],
+    texto: `${NOMBRE[tipo]}${c.linea ? " " + esc(c.linea) : ""} · ${fMin(c.minutos || 0)}${espera ? ` + ≈${Math.round(espera)} min espera` : ""}`,
+    sub: [c.subida || c.bajada ? `${esc(c.subida || "?")} → ${esc(c.bajada || "?")}` : "", esc(c.notas || "")].filter(Boolean).join(" · ")
+  };
+}
+
+// ---------- Pintar ----------
+let pintando = 0;
+async function pintar() {
+  if (!viaje || !$("#titulo")) return;
+  const turno = ++pintando;
+  const numDias = viaje.numDias || 1;
+  if (dia > numDias) dia = 1;
+
+  $("#titulo").textContent = viaje.nombre || "Viaje";
+  const nombres = Object.values(viaje.nombres || {});
+  $("#quien").textContent = nombres.length ? `Con ${nombres.join(", ")}` : "";
+
+  const nav = $("#dias");
+  nav.innerHTML = numDias > 1 ? Array.from({ length: numDias }, (_, i) => `<button type="button" aria-pressed="${i + 1 === dia}" data-d="${i + 1}">Día ${i + 1}</button>`).join("") : "";
+  nav.querySelectorAll("button").forEach(b => b.onclick = () => { dia = +b.dataset.d; pintar(); });
+
+  const delDia = paradas.filter(p => (p.dia || 1) === dia).sort((x, y) => (x.orden || 0) - (y.orden || 0));
+  $("#pista").hidden = delDia.length > 0;
+
+  const tramos = await Promise.all(delDia.slice(0, -1).map((p, i) => calcularTramo(p, delDia[i + 1])));
+  if (turno !== pintando) return; // llegó otra actualización mientras calculaba
+
+  // Horario
+  const salida = leerHora((viaje.horasSalida || {})[String(dia)]);
+  const horas = []; let reloj = salida;
+  delDia.forEach((p, i) => {
+    if (salida == null) return;
+    if (i > 0) { const t = tramos[i - 1]; if (t.fija != null && t.fija >= reloj) reloj = t.fija; reloj += t.segundos / 60; }
+    const lle = reloj; reloj += p.minutosVisita || 0; horas.push([lle, reloj]);
+  });
+
+  // Resumen
+  const aPieM = tramos.reduce((x, t) => x + t.aPieM, 0), aPieS = tramos.reduce((x, t) => x + t.aPieS, 0);
+  const totS = tramos.reduce((x, t) => x + t.segundos, 0), visitas = delDia.reduce((x, p) => x + (p.minutosVisita || 0), 0);
+  const total = totS / 60 + visitas;
+  $("#resumen").innerHTML = `<div class="fila">
+      <span><b>${delDia.length}</b> paradas</span>
+      <span>${fDist(aPieM)} a pie (${fMin(aPieS / 60)})</span>
+      ${totS - aPieS > 59 ? `<span>${fMin((totS - aPieS) / 60)} en transporte</span>` : ""}
+      <span>Total ${fMin(total)}${salida != null ? `, fin hacia las ${fHora(salida + total)}` : ""}</span>
+      <label>Salida <input type="time" id="horaSalida" value="${salida != null ? fHora(salida) : ""}"></label>
+    </div>`;
+  $("#horaSalida").onchange = (e) => updateDoc(doc(db, "viajes", viajeId), { [`horasSalida.${dia}`]: e.target.value });
+
+  // Lista
+  const lista = $("#lista");
+  if (!delDia.length) {
+    lista.innerHTML = `<li class="vacio">Este día aún no tiene paradas. Busca un sitio arriba o toca el mapa para añadir la primera.</li>`;
+  } else {
+    lista.innerHTML = delDia.map((p, i) => {
+      const h = horas[i];
+      const detalle = [
+        h ? ((p.minutosVisita || 0) > 0 ? `${fHora(h[0])} – ${fHora(h[1])}` : fHora(h[0])) : "",
+        p.minutosVisita ? `visita de ${fMin(p.minutosVisita)}` : "",
+        esc(p.notas || "")
+      ].filter(Boolean).join(" · ");
+      const t = tramos[i];
+      return `<li>
+        <div class="parada ${p.visitada ? "visitada" : ""}">
+          <span class="num" aria-hidden="true">${p.orden}</span>
+          <div>
+            <button class="nombre" data-editar="${p.id}">${esc(p.nombre)}</button>
+            ${detalle ? `<div class="detalle">${detalle}</div>` : ""}
+            <label class="visto"><input type="checkbox" data-visto="${p.id}" ${p.visitada ? "checked" : ""}> Visitado</label>
+          </div>
+          <div class="acciones">
+            <button data-mover="${i}" data-dir="-1" ${i === 0 ? "disabled" : ""} aria-label="Subir">▲</button>
+            <button data-mover="${i}" data-dir="1" ${i === delDia.length - 1 ? "disabled" : ""} aria-label="Bajar">▼</button>
+          </div>
+        </div>
+        ${t ? `<div class="tramo">${ICONO[t.tipo] || "🚶"} <b>${t.texto}</b>${t.sub ? `<br>${t.sub}` : ""}</div>` : ""}
+      </li>`;
+    }).join("");
+    lista.querySelectorAll("[data-editar]").forEach(b => b.onclick = () => abrirEditar(paradas.find(x => x.id === b.dataset.editar)));
+    lista.querySelectorAll("[data-visto]").forEach(c => c.onchange = () =>
+      updateDoc(doc(db, "viajes", viajeId, "paradas", c.dataset.visto), { visitada: c.checked }));
+    lista.querySelectorAll("[data-mover]").forEach(b => b.onclick = () => {
+      const i = +b.dataset.mover, j = i + +b.dataset.dir;
+      const orden = [...delDia]; const [p] = orden.splice(i, 1); orden.splice(j, 0, p);
+      guardarOrden(orden);
+    });
+  }
+
+  // Mapa
+  if (mapaListo) {
+    mapa.getSource("paradas").setData({ type: "FeatureCollection", features: delDia.map(p => ({
+      type: "Feature", geometry: { type: "Point", coordinates: [p.lng, p.lat] }, properties: { id: p.id, orden: p.orden, visitada: !!p.visitada } })) });
+    mapa.getSource("rutas").setData({ type: "FeatureCollection", features: tramos.flatMap(t => t.lineas.filter(l => l.coords.length >= 2).map(l => ({
+      type: "Feature", geometry: { type: "LineString", coordinates: l.coords }, properties: { tipo: l.tipo, calc: l.calc } }))) });
+    if (encuadradoDia !== dia && delDia.length) {
+      encuadradoDia = dia;
+      if (delDia.length === 1) mapa.flyTo({ center: [delDia[0].lng, delDia[0].lat], zoom: 15 });
+      else {
+        const b = new maplibregl.LngLatBounds();
+        delDia.forEach(p => b.extend([p.lng, p.lat]));
+        mapa.fitBounds(b, { padding: 60, duration: 600 });
+      }
+    }
+  }
+}
+
+// ---------- Editar / añadir ----------
+function rellenarDias(sel, actual) {
+  const n = viaje.numDias || 1;
+  sel.innerHTML = Array.from({ length: n }, (_, i) => `<option value="${i + 1}" ${i + 1 === actual ? "selected" : ""}>Día ${i + 1}</option>`).join("");
+  sel.parentElement.hidden = n < 2;
+}
+function abrirNueva(punto, nombre) {
+  editando = null; nuevoPunto = punto;
+  const f = $("#formParada");
+  $("#tituloParada").textContent = "Nueva parada";
+  f.nombre.value = nombre; f.minutos.value = ""; f.notas.value = "";
+  rellenarDias(f.dia, dia);
+  $("#btnBorrar").hidden = true;
+  $("#dlgParada").showModal();
+}
+function abrirEditar(p) {
+  if (!p) return;
+  editando = p; nuevoPunto = null;
+  const f = $("#formParada");
+  $("#tituloParada").textContent = "Editar parada";
+  f.nombre.value = p.nombre || ""; f.minutos.value = p.minutosVisita || ""; f.notas.value = p.notas || "";
+  rellenarDias(f.dia, p.dia || 1);
+  $("#btnBorrar").hidden = false;
+  $("#dlgParada").showModal();
+}
+async function guardarParada(e) {
+  e.preventDefault();
+  const f = e.target;
+  const datos = { nombre: f.nombre.value.trim(), minutosVisita: +f.minutos.value || 0, notas: f.notas.value.trim() };
+  const d = +f.dia.value || 1;
+  if (!datos.nombre) return;
+  const enDia = paradas.filter(p => (p.dia || 1) === d && p.id !== editando?.id);
+  const sigOrden = enDia.reduce((m, p) => Math.max(m, p.orden || 0), 0) + 1;
+  $("#dlgParada").close();
+  if (editando) {
+    const cambios = { ...datos };
+    if (d !== (editando.dia || 1)) {
+      cambios.dia = d; cambios.orden = sigOrden;
+      const origen = paradas.filter(p => (p.dia || 1) === (editando.dia || 1) && p.id !== editando.id).sort((x, y) => x.orden - y.orden);
+      guardarOrden(origen);
+    }
+    await updateDoc(doc(db, "viajes", viajeId, "paradas", editando.id), cambios);
+  } else if (nuevoPunto) {
+    await addDoc(collection(db, "viajes", viajeId, "paradas"), {
+      ...datos, dia: d, orden: sigOrden, lat: nuevoPunto.lat, lng: nuevoPunto.lng, visitada: false, creado: serverTimestamp()
+    });
+  }
+}
+async function borrarParada() {
+  const p = editando; if (!p) return;
+  if (!confirm(`¿Borrar «${p.nombre}» para todas las personas del viaje?`)) return;
+  $("#dlgParada").close();
+  const lote = writeBatch(db);
+  lote.delete(doc(db, "viajes", viajeId, "paradas", p.id));
+  paradas.filter(x => (x.dia || 1) === (p.dia || 1) && x.id !== p.id).sort((x, y) => x.orden - y.orden)
+    .forEach((x, i) => { if (x.orden !== i + 1) lote.update(doc(db, "viajes", viajeId, "paradas", x.id), { orden: i + 1 }); });
+  await lote.commit();
+}
+function guardarOrden(lista) {
+  const lote = writeBatch(db); let cambios = 0;
+  lista.forEach((p, i) => { if (p.orden !== i + 1) { lote.update(doc(db, "viajes", viajeId, "paradas", p.id), { orden: i + 1 }); cambios++; } });
+  if (cambios) lote.commit().catch(console.warn);
+}
+</script>
+</body>
+</html>
