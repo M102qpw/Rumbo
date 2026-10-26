@@ -376,7 +376,7 @@ function montar() {
         <div class="asa" id="asa" title="Mostrar u ocultar la lista"><span class="raya"></span><button type="button" id="cerrarPanel" aria-label="Ocultar la lista">✕ Ocultar lista</button></div>
         <div class="resumen" id="resumen"></div>
         <ol class="paradas" id="lista"></ol>
-        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 14 (tipos de mapa)</p>
+        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 15 (tipos de mapa arreglado)</p>
       </section>
       <button type="button" class="boton-lista" id="abrirPanel">☰ Ver la lista</button>
     </div>
@@ -523,7 +523,9 @@ let tipoMapa = localStorage.getItem("rumbo-tipo-mapa") || "normal";
 function cambiarMapa(t) {
   tipoMapa = t; localStorage.setItem("rumbo-tipo-mapa", t);
   mapaListo = false;
-  mapa.setStyle(ESTILOS[t]);
+  // diff: false = cargar el mapa nuevo de cero. Si no, MapLibre "reaprovecha" el estilo anterior,
+  // quita nuestras capas (puntos y líneas) y no avisa para volver a ponerlas.
+  mapa.setStyle(ESTILOS[t], { diff: false });
 }
 
 async function buscar(q) {
