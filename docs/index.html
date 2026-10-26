@@ -36,7 +36,8 @@
   :focus-visible { outline: 3px solid var(--terracota); outline-offset: 2px; }
 
   .app { display: grid; grid-template-rows: auto auto 1fr; height: 100dvh; }
-  header { padding: 14px 18px 6px; }
+  header { padding: 8px 18px 2px; }
+  @media (max-width: 899px) { header h1 { font-size: 1.5rem; } .quien { display: none; } }
   header h1 { margin: 0; font-size: clamp(1.6rem, 5vw, 2.3rem); font-weight: 700; letter-spacing: -.02em; line-height: 1.05; }
   .quien { margin: 4px 0 0; color: var(--suave); font-size: .9rem; }
 
@@ -47,7 +48,7 @@
   }
   .dias button[aria-pressed="true"] { background: var(--oliva-claro); border-color: var(--oliva); font-weight: 600; }
 
-  .cuerpo { display: grid; grid-template-rows: 46vh 1fr; min-height: 0; }
+  .cuerpo { display: grid; grid-template-rows: 62vh 1fr; min-height: 0; }
   @media (min-width: 900px) { .cuerpo { grid-template-rows: none; grid-template-columns: 1fr 440px; } }
 
   .mapa-caja { position: relative; min-height: 0; }
@@ -334,7 +335,7 @@ function montar() {
       <section class="panel">
         <div class="resumen" id="resumen"></div>
         <ol class="paradas" id="lista"></ol>
-        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 8 (mover copias)</p>
+        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 9 (mapa grande)</p>
       </section>
     </div>
   </div>`;
@@ -619,11 +620,12 @@ async function pintar() {
         <div class="parada ${p.visitada ? "visitada" : ""}">
           <span class="num" aria-hidden="true">${p.orden}</span>
           <div>
-            <button class="nombre" data-editar="${p.id}">${CATEGORIA[p.categoria] ? CATEGORIA[p.categoria] + " " : ""}${esc(p.nombre)}</button>
+            <button class="nombre" data-ir="${p.id}" title="Ver en el mapa">${CATEGORIA[p.categoria] ? CATEGORIA[p.categoria] + " " : ""}${esc(p.nombre)}</button>
             ${detalle ? `<div class="detalle">${detalle}</div>` : ""}
             <label class="visto"><input type="checkbox" data-visto="${p.id}" ${p.visitada ? "checked" : ""}> Visitado</label>
           </div>
           <div class="acciones">
+            <button data-editar="${p.id}" aria-label="Editar">✏️</button>
             <button data-mover="${i}" data-dir="-1" ${i === 0 ? "disabled" : ""} aria-label="Subir">▲</button>
             <button data-mover="${i}" data-dir="1" ${i === delDia.length - 1 ? "disabled" : ""} aria-label="Bajar">▼</button>
           </div>
@@ -634,6 +636,11 @@ async function pintar() {
       </li>`;
     }).join("");
     lista.querySelectorAll("[data-tramo]").forEach(b => b.onclick = () => { if (!modo) abrirTramo(delDia[+b.dataset.tramo], delDia[+b.dataset.tramo + 1]); });
+    lista.querySelectorAll("[data-ir]").forEach(b => b.onclick = () => {
+      const p = paradas.find(x => x.id === b.dataset.ir); if (!p) return;
+      mapa.flyTo({ center: [p.lng, p.lat], zoom: 17, duration: 700 });
+      document.querySelector(".mapa-caja").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
     lista.querySelectorAll("[data-editar]").forEach(b => b.onclick = () => abrirEditar(paradas.find(x => x.id === b.dataset.editar)));
     lista.querySelectorAll("[data-visto]").forEach(c => c.onchange = () =>
       updateDoc(doc(db, "viajes", viajeId, "paradas", c.dataset.visto), { visitada: c.checked }));
