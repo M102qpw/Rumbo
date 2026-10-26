@@ -350,7 +350,7 @@ function montar() {
       <section class="panel">
         <div class="resumen" id="resumen"></div>
         <ol class="paradas" id="lista"></ol>
-        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 11 (km y horas)</p>
+        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 12 (editar copias)</p>
       </section>
     </div>
   </div>`;
@@ -735,6 +735,19 @@ async function guardarParada(e) {
       guardarOrden(origen);
     }
     await updateDoc(doc(db, "viajes", viajeId, "paradas", editando.id), cambios);
+    // ¿Copias de esta parada (el hotel de cada día…)? Ofrecer llevarles el nombre, las notas y el código
+    const comunes = {};
+    if (datos.nombre !== (editando.nombre || "")) comunes.nombre = datos.nombre;
+    if (datos.notas !== (editando.notas || "")) comunes.notas = datos.notas;
+    if (datos.codigoReserva !== (editando.codigoReserva || "")) comunes.codigoReserva = datos.codigoReserva;
+    const copias = paradas.filter(x => x.id !== editando.id && (x.nombre || "").trim().toLowerCase() === (editando.nombre || "").trim().toLowerCase()
+      && distancia(x, editando) < 150);
+    if (Object.keys(comunes).length && copias.length &&
+        confirm(`«${editando.nombre}» aparece ${copias.length} ${copias.length === 1 ? "vez más" : "veces más"} en el viaje. ¿Aplicar también estos cambios a todas las copias? (La hora fija y el tiempo de cada una no se tocan.)`)) {
+      const lote = writeBatch(db);
+      copias.forEach(c => lote.update(doc(db, "viajes", viajeId, "paradas", c.id), comunes));
+      await lote.commit();
+    }
   } else if (nuevoPunto) {
     await addDoc(collection(db, "viajes", viajeId, "paradas"), {
       ...datos, dia: d, orden: sigOrden, lat: nuevoPunto.lat, lng: nuevoPunto.lng, visitada: false, creado: serverTimestamp()
