@@ -41,6 +41,7 @@
   header.barra h1 { margin: 0; font-size: 1.25rem; font-weight: 700; letter-spacing: -.01em; line-height: 1.1; flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .quien { margin: 0; color: var(--suave); font-size: .85rem; }
   @media (max-width: 899px) { .quien { display: none; } }
+  .tipo-mapa { border: 1.5px solid var(--linea); background: var(--superficie); border-radius: 999px; padding: 6px 10px; }
   .selector-dia { display: flex; align-items: center; gap: 4px; }
   .selector-dia button { width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid var(--linea); background: var(--superficie); font-size: 1.1rem; line-height: 1; }
   .selector-dia button:disabled { opacity: .3; cursor: default; }
@@ -351,6 +352,10 @@ function montar() {
   <div class="app">
     <header class="barra">
       <h1 id="titulo"></h1><p class="quien" id="quien"></p>
+      <select id="tipoMapa" class="tipo-mapa" aria-label="Tipo de mapa">
+        <option value="normal">🗺️ Normal</option><option value="claro">⚪ Claro</option>
+        <option value="relieve">⛰️ Relieve</option><option value="satelite">🛰️ Satélite</option>
+      </select>
       <div class="selector-dia" id="selectorDia">
         <button type="button" id="diaAnt" aria-label="Día anterior">‹</button>
         <select id="selDia" aria-label="Día del viaje"></select>
@@ -371,7 +376,7 @@ function montar() {
         <div class="asa" id="asa" title="Mostrar u ocultar la lista"><span class="raya"></span><button type="button" id="cerrarPanel" aria-label="Ocultar la lista">✕ Ocultar lista</button></div>
         <div class="resumen" id="resumen"></div>
         <ol class="paradas" id="lista"></ol>
-        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 13 (mapa grande)</p>
+        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 14 (tipos de mapa)</p>
       </section>
       <button type="button" class="boton-lista" id="abrirPanel">☰ Ver la lista</button>
     </div>
@@ -379,7 +384,7 @@ function montar() {
 
   mapa = new maplibregl.Map({
     container: "mapa",
-    style: "https://tiles.openfreemap.org/styles/liberty",
+    style: ESTILOS[tipoMapa] || ESTILOS.normal,
     center: [-3.7038, 40.4168], zoom: 12, attributionControl: { compact: true }
   });
   mapa.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-left");
@@ -407,11 +412,16 @@ function montar() {
       : { top: 70, bottom: 50, left: 60, right: abierto ? 470 : 60 };
   };
 
+  $("#tipoMapa").value = tipoMapa;
+  $("#tipoMapa").onchange = (e) => cambiarMapa(e.target.value);
+
   // Selector de día
   $("#selDia").onchange = (e) => { dia = +e.target.value; pintar(); };
   $("#diaAnt").onclick = () => { if (dia > 1) { dia--; pintar(); } };
   $("#diaSig").onclick = () => { if (dia < (viaje?.numDias || 1)) { dia++; pintar(); } };
-  mapa.on("load", () => {
+  // Al cargar cualquier tipo de mapa (también al cambiarlo) se vuelven a poner nuestras capas
+  mapa.on("style.load", () => {
+    if (mapa.getSource("rutas")) return;
     mapa.addSource("rutas", { type: "geojson", data: vacio() });
     mapa.addSource("paradas", { type: "geojson", data: vacio() });
     mapa.addSource("marcas", { type: "geojson", data: vacio() });
@@ -428,6 +438,7 @@ function montar() {
       layout: { "text-field": ["to-string", ["get", "orden"]], "text-font": ["Noto Sans Bold"], "text-size": 12, "text-allow-overlap": true, "text-ignore-placement": true },
       paint: { "text-color": "#fff" } });
     mapaListo = true;
+    encuadradoDia = dia; // al cambiar el tipo de mapa, no volver a encuadrar
     pintar();
   });
   mapa.on("click", (e) => {
@@ -494,6 +505,26 @@ function montar() {
 }
 
 const vacio = () => ({ type: "FeatureCollection", features: [] });
+
+// ---------- Tipos de mapa (todos gratuitos y sin clave) ----------
+const LETRAS = "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf";
+const raster = (teselas, maxzoom, attribution) => ({
+  version: 8, glyphs: LETRAS,
+  sources: { fondo: { type: "raster", tiles: teselas, tileSize: 256, maxzoom, attribution } },
+  layers: [{ id: "fondo", type: "raster", source: "fondo" }]
+});
+const ESTILOS = {
+  normal: "https://tiles.openfreemap.org/styles/liberty",
+  claro: "https://tiles.openfreemap.org/styles/positron",
+  relieve: raster(["a", "b", "c"].map(x => `https://${x}.tile.opentopomap.org/{z}/{x}/{y}.png`), 17, "© OpenTopoMap (CC-BY-SA) · © OpenStreetMap"),
+  satelite: raster(["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"], 19, "Imágenes © Esri, Maxar, Earthstar Geographics")
+};
+let tipoMapa = localStorage.getItem("rumbo-tipo-mapa") || "normal";
+function cambiarMapa(t) {
+  tipoMapa = t; localStorage.setItem("rumbo-tipo-mapa", t);
+  mapaListo = false;
+  mapa.setStyle(ESTILOS[t]);
+}
 
 async function buscar(q) {
   const c = mapa.getCenter();
