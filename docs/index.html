@@ -94,6 +94,29 @@
   .visto { margin-top: 6px; display: inline-flex; gap: 6px; align-items: center; font-size: .88rem; color: var(--suave); }
   .tramo { margin: 0 14px 0 54px; padding: 4px 0 8px; color: var(--suave); font-size: .85rem; border-left: 2px dashed var(--linea); padding-left: 14px; }
   .tramo b { font-weight: 600; color: var(--tinta); }
+  .tramo button.cambiar { all: unset; cursor: pointer; display: block; width: 100%; }
+  .tramo button.cambiar:hover b { text-decoration: underline; }
+  .tramo button.cambiar:focus-visible { outline: 3px solid var(--terracota); outline-offset: 2px; border-radius: 6px; }
+  .tramo .editar { float: right; opacity: .6; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chips button { border: 1.5px solid var(--linea); background: transparent; border-radius: 999px; padding: 5px 11px; font-size: .9rem; }
+  .chips button[aria-pressed="true"] { background: var(--oliva-claro); border-color: var(--oliva); font-weight: 600; }
+  .boton.ancho { width: 100%; margin-top: 10px; }
+  .nota { font-size: .85rem; color: var(--suave); margin: 8px 0 0; }
+  .paso { border: 1.5px solid var(--linea); border-radius: 14px; padding: 10px 12px; margin-top: 10px; }
+  .paso .cabeza { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: .9rem; }
+  .opcion { display: block; width: 100%; text-align: left; border: 1.5px solid var(--linea); border-radius: 14px; background: var(--papel); padding: 10px 12px; margin-top: 10px; }
+  .opcion:hover { border-color: var(--terracota); }
+  .opcion .horas { font-weight: 700; font-size: 1.05rem; }
+  .opcion .pasos { margin-top: 4px; }
+  .opcion small { display: block; color: var(--suave); margin-top: 2px; }
+  .barra-modo {
+    position: absolute; left: 10px; right: 10px; bottom: 12px; z-index: 3; max-width: 520px; margin: 0 auto;
+    background: var(--superficie); border-radius: 18px; box-shadow: var(--sombra); padding: 12px 14px;
+  }
+  .barra-modo p { margin: 2px 0 8px; font-size: .88rem; color: var(--suave); }
+  .barra-modo .botones { margin-top: 6px; }
+  dialog .fila2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .vacio { padding: 28px 18px; color: var(--suave); }
 
   dialog {
@@ -136,6 +159,32 @@
   </form>
 </dialog>
 
+<dialog id="dlgTramo">
+  <form method="dialog" id="formTramo">
+    <h2 id="tituloTramo"></h2>
+    <button type="button" class="boton ancho" id="btnSugerir">✨ Sugerir rutas en transporte</button>
+    <p class="nota">O elige tú cómo vais:</p>
+    <div class="chips" id="chipsTipo"></div>
+    <div id="camposTramo"></div>
+    <label>Notas<textarea name="notas" rows="2" placeholder="Billete, salida del metro…"></textarea></label>
+    <div class="botones">
+      <button type="button" class="boton secundario" id="btnCancelarTramo">Cancelar</button>
+      <button type="submit" class="boton" id="btnGuardarTramo">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlgSugerencias">
+  <h2 id="tituloSug"></h2>
+  <div class="fila2">
+    <label>Fecha<input type="date" id="sugFecha"></label>
+    <label>Salida<input type="time" id="sugHora"></label>
+  </div>
+  <div id="sugResultados"></div>
+  <p class="nota"><a href="https://transitous.org/sources/" target="_blank" rel="noopener" style="color:inherit">Horarios: Transitous y sus fuentes</a> · Mapa © OpenStreetMap</p>
+  <div class="botones"><button type="button" class="boton secundario" id="btnCerrarSug">Cerrar</button></div>
+</dialog>
+
 <dialog id="dlgNombre">
   <form method="dialog" id="formNombre">
     <h2>¿Cómo te llamas?</h2>
@@ -150,7 +199,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/fireba
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, updateDoc, onSnapshot, collection, addDoc, writeBatch,
-  arrayUnion, serverTimestamp
+  arrayUnion, serverTimestamp, deleteField, GeoPoint
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 // Configuración web del proyecto Rumbo en Firebase
@@ -173,6 +222,8 @@ let mapa = null, mapaListo = false, encuadradoDia = null;
 const rutasCache = new Map();
 let editando = null;      // parada que se edita
 let nuevoPunto = null;    // {lat,lng} para parada nueva
+let modo = null;          // {tipo:'dibujo'|'ajuste'|'alternativas', a, b, cfg, puntos, opciones, elegida}
+let ultimoDelDia = [], ultimasHoras = [];
 
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (t) => String(t ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -193,7 +244,7 @@ const coord = (g) => ({ lat: g.latitude ?? g.lat, lng: g.longitude ?? g.lng });
 
 const ICONO = { andando: "🚶", pasaje: "🪜", bus: "🚌", metro: "🚇", tren: "🚆", tranvia: "🚊", taxi: "🚕", barco: "⛴️", ruta: "🔀" };
 const NOMBRE = { andando: "Andando", pasaje: "Pasaje", bus: "Bus", metro: "Metro", tren: "Tren", tranvia: "Tranvía", taxi: "Taxi", barco: "Barco", ruta: "Varios pasos" };
-const COLOR = { andando: "#C2553D", pasaje: "#8C6A4F", bus: "#2F6DB5", metro: "#6B4FA0", tren: "#3D7A3D", tranvia: "#D08A1E", taxi: "#C9A100", barco: "#1E8A9A" };
+const COLOR = { alternativa: "#9E9A94", andando: "#C2553D", pasaje: "#8C6A4F", bus: "#2F6DB5", metro: "#6B4FA0", tren: "#3D7A3D", tranvia: "#D08A1E", taxi: "#C9A100", barco: "#1E8A9A" };
 const esPublico = (t) => ["bus", "metro", "tren", "tranvia", "barco"].includes(t);
 
 // ---------- Arranque ----------
@@ -262,6 +313,7 @@ function montar() {
           <div class="resultados" id="resultados" hidden></div>
         </div>
         <div class="pista" id="pista">Toca el mapa para añadir una parada</div>
+        <div class="barra-modo" id="barraModo" hidden></div>
       </div>
       <section class="panel">
         <div class="resumen" id="resumen"></div>
@@ -280,11 +332,14 @@ function montar() {
   mapa.on("load", () => {
     mapa.addSource("rutas", { type: "geojson", data: vacio() });
     mapa.addSource("paradas", { type: "geojson", data: vacio() });
+    mapa.addSource("marcas", { type: "geojson", data: vacio() });
     const colorPorTipo = ["match", ["get", "tipo"], ...Object.entries(COLOR).flat(), "#C2553D"];
     mapa.addLayer({ id: "ruta", type: "line", source: "rutas", filter: ["==", ["get", "calc"], true],
       layout: { "line-join": "round", "line-cap": "round" }, paint: { "line-color": colorPorTipo, "line-width": 4, "line-opacity": .85 } });
     mapa.addLayer({ id: "ruta-recta", type: "line", source: "rutas", filter: ["==", ["get", "calc"], false],
       layout: { "line-cap": "round" }, paint: { "line-color": colorPorTipo, "line-width": 3, "line-opacity": .6, "line-dasharray": [2, 1.5] } });
+    mapa.addLayer({ id: "marcas", type: "circle", source: "marcas",
+      paint: { "circle-radius": 7, "circle-color": "#fff", "circle-stroke-width": 3, "circle-stroke-color": "#C2553D" } });
     mapa.addLayer({ id: "paradas", type: "circle", source: "paradas",
       paint: { "circle-radius": 12, "circle-color": ["case", ["get", "visitada"], "#2E7D5B", "#C2553D"], "circle-stroke-width": 2.5, "circle-stroke-color": "#fff" } });
     mapa.addLayer({ id: "numeros", type: "symbol", source: "paradas",
@@ -294,6 +349,7 @@ function montar() {
     pintar();
   });
   mapa.on("click", (e) => {
+    if (modo) { clicEnModo({ lat: e.lngLat.lat, lng: e.lngLat.lng }); return; }
     const toc = mapa.queryRenderedFeatures([[e.point.x - 14, e.point.y - 14], [e.point.x + 14, e.point.y + 14]], { layers: ["paradas"] });
     if (toc.length) { const p = paradas.find(x => x.id === toc[0].properties.id); if (p) abrirEditar(p); return; }
     abrirNueva({ lat: e.lngLat.lat, lng: e.lngLat.lng }, "");
@@ -311,6 +367,9 @@ function montar() {
   $("#btnCancelar").onclick = () => $("#dlgParada").close();
   $("#formParada").onsubmit = guardarParada;
   $("#btnBorrar").onclick = borrarParada;
+  $("#btnCancelarTramo").onclick = () => $("#dlgTramo").close();
+  $("#formTramo").onsubmit = (e) => { e.preventDefault(); guardarTramo(configFormulario()); $("#dlgTramo").close(); };
+  $("#btnCerrarSug").onclick = () => $("#dlgSugerencias").close();
 }
 
 const vacio = () => ({ type: "FeatureCollection", features: [] });
@@ -364,7 +423,9 @@ async function calcularTramo(a, b) {
     try {
       const r = await rutaAPie(a, b, (c?.porDonde || []).map(coord), c?.alternativa || 0);
       return { tipo, metros: r.metros, segundos: r.segundos, aPieM: r.metros, aPieS: r.segundos, lineas: [{ coords: r.coords, tipo, calc: true }],
-        texto: `${fDist(r.metros)} · ${fMin(r.segundos / 60)}` };
+        texto: `${fDist(r.metros)} · ${fMin(r.segundos / 60)}`,
+        etiqueta: (c?.porDonde || []).length ? "por tu camino" : (c?.alternativa > 0 ? `alternativa ${c.alternativa + 1}` : ""),
+        sub: esc(c?.notas || "") };
     } catch {
       const m = distancia(a, b) * 1.3;
       return { tipo, metros: m, segundos: m / 1.25, aPieM: m, aPieS: m / 1.25, lineas: [{ coords: recta, tipo, calc: false }], texto: `≈ ${fDist(m)} · ${fMin(m / 75)}` };
@@ -419,9 +480,31 @@ async function pintar() {
   nav.querySelectorAll("button").forEach(b => b.onclick = () => { dia = +b.dataset.d; pintar(); });
 
   const delDia = paradas.filter(p => (p.dia || 1) === dia).sort((x, y) => (x.orden || 0) - (y.orden || 0));
-  $("#pista").hidden = delDia.length > 0;
+  $("#pista").hidden = delDia.length > 0 || !!modo;
 
   const tramos = await Promise.all(delDia.slice(0, -1).map((p, i) => calcularTramo(p, delDia[i + 1])));
+  // Modos de mapa: sustituir la línea del tramo que se está tocando
+  if (modo) {
+    const i = delDia.findIndex(p => p.id === modo.a.id);
+    if (i >= 0 && delDia[i + 1]?.id === modo.b.id) {
+      const { a, b } = modo;
+      if (modo.tipo === "dibujo") {
+        const camino = [a, ...modo.puntos, b].map(p => [p.lng, p.lat]);
+        tramos[i] = { ...tramos[i], lineas: [{ coords: camino, tipo: "pasaje", calc: true }] };
+      } else if (modo.tipo === "ajuste") {
+        try {
+          const r = await rutaAPie(a, b, modo.puntos);
+          modo.previa = r;
+          tramos[i] = { ...tramos[i], lineas: [{ coords: r.coords, tipo: "andando", calc: true }] };
+        } catch { /* se queda la línea anterior */ }
+      } else if (modo.tipo === "alternativas" && modo.opciones?.length) {
+        tramos[i] = { ...tramos[i], lineas: [
+          ...modo.opciones.filter((_, j) => j !== modo.elegida).map(o => ({ coords: o.coords, tipo: "alternativa", calc: true })),
+          { coords: modo.opciones[modo.elegida].coords, tipo: "andando", calc: true }
+        ] };
+      }
+    }
+  }
   if (turno !== pintando) return; // llegó otra actualización mientras calculaba
 
   // Horario
@@ -429,9 +512,18 @@ async function pintar() {
   const horas = []; let reloj = salida;
   delDia.forEach((p, i) => {
     if (salida == null) return;
-    if (i > 0) { const t = tramos[i - 1]; if (t.fija != null && t.fija >= reloj) reloj = t.fija; reloj += t.segundos / 60; }
+    if (i > 0) {
+      const t = tramos[i - 1];
+      if (t.fija != null) { if (t.fija >= reloj) reloj = t.fija; else t.tarde = true; }
+      reloj += t.segundos / 60;
+    }
     const lle = reloj; reloj += p.minutosVisita || 0; horas.push([lle, reloj]);
   });
+
+  ultimoDelDia = delDia; ultimasHoras = horas;
+  pintarBarraModo();
+  if (mapaListo) mapa.getSource("marcas").setData({ type: "FeatureCollection",
+    features: (modo?.tipo === "ajuste" ? modo.puntos : []).map(p => ({ type: "Feature", geometry: { type: "Point", coordinates: [p.lng, p.lat] }, properties: {} })) });
 
   // Resumen
   const aPieM = tramos.reduce((x, t) => x + t.aPieM, 0), aPieS = tramos.reduce((x, t) => x + t.aPieS, 0);
@@ -472,9 +564,12 @@ async function pintar() {
             <button data-mover="${i}" data-dir="1" ${i === delDia.length - 1 ? "disabled" : ""} aria-label="Bajar">▼</button>
           </div>
         </div>
-        ${t ? `<div class="tramo">${ICONO[t.tipo] || "🚶"} <b>${t.texto}</b>${t.sub ? `<br>${t.sub}` : ""}</div>` : ""}
+        ${t ? `<div class="tramo"><button type="button" class="cambiar" data-tramo="${i}" aria-label="Cambiar cómo vais">
+          <span class="editar" aria-hidden="true">✏️</span>${ICONO[t.tipo] || "🚶"} <b>${t.texto}</b>${t.etiqueta ? ` · ${t.etiqueta}` : ""}
+          ${t.tarde ? `<br>⚠️ No llegáis a tiempo a la salida de las ${esc(configDe(p, delDia[i + 1])?.horaSalida)}` : ""}${t.sub ? `<br>${t.sub}` : ""}</button></div>` : ""}
       </li>`;
     }).join("");
+    lista.querySelectorAll("[data-tramo]").forEach(b => b.onclick = () => { if (!modo) abrirTramo(delDia[+b.dataset.tramo], delDia[+b.dataset.tramo + 1]); });
     lista.querySelectorAll("[data-editar]").forEach(b => b.onclick = () => abrirEditar(paradas.find(x => x.id === b.dataset.editar)));
     lista.querySelectorAll("[data-visto]").forEach(c => c.onchange = () =>
       updateDoc(doc(db, "viajes", viajeId, "paradas", c.dataset.visto), { visitada: c.checked }));
@@ -565,6 +660,334 @@ function guardarOrden(lista) {
   const lote = writeBatch(db); let cambios = 0;
   lista.forEach((p, i) => { if (p.orden !== i + 1) { lote.update(doc(db, "viajes", viajeId, "paradas", p.id), { orden: i + 1 }); cambios++; } });
   if (cambios) lote.commit().catch(console.warn);
+}
+
+// =====================================================================
+// Tramos: cómo vais de una parada a la siguiente
+// =====================================================================
+const TIPOS_TRAMO = ["andando", "pasaje", "bus", "metro", "tren", "tranvia", "taxi", "ruta"];
+const TIPOS_PASO = ["andando", "bus", "metro", "tren", "tranvia", "barco", "taxi"];
+let tramoForm = null; // { a, b, cfg }
+
+const copiaCfg = (c, b) => JSON.parse(JSON.stringify({
+  destinoId: b.id, tipo: "andando", linea: "", subida: "", bajada: "", minutos: 0, frecuencia: 0, notas: "",
+  puntos: [], pasos: [], esperaMin: 0, horaSalida: "", porDonde: [], alternativa: 0,
+  ...(c || {}),
+  puntos: (c?.puntos || []).map(coord), porDonde: (c?.porDonde || []).map(coord),
+  pasos: (c?.pasos || []).map(p => ({ ...p, puntos: (p.puntos || []).map(coord) }))
+}));
+
+function abrirTramo(a, b) {
+  tramoForm = { a, b, cfg: copiaCfg(configDe(a, b), b) };
+  if (tramoForm.cfg.tipo === "ruta" && !tramoForm.cfg.pasos.length) tramoForm.cfg.pasos = [{ tipo: "andando", minutos: 0 }, { tipo: "bus", minutos: 0 }];
+  $("#tituloTramo").textContent = `${a.nombre} → ${b.nombre}`;
+  $("#formTramo").notas.value = tramoForm.cfg.notas || "";
+  $("#btnSugerir").onclick = () => { $("#dlgTramo").close(); abrirSugerencias(a, b); };
+  pintarFormTramo();
+  $("#dlgTramo").showModal();
+}
+
+/** Lee lo escrito en el formulario y lo guarda en tramoForm.cfg */
+function leerCampos() {
+  const c = tramoForm.cfg, f = $("#formTramo");
+  c.notas = f.notas.value.trim();
+  const val = (n) => f.querySelector(`[name="${n}"]`)?.value ?? "";
+  if (esPublico(c.tipo)) { c.linea = val("linea").trim(); c.subida = val("subida").trim(); c.bajada = val("bajada").trim(); c.frecuencia = +val("frecuencia") || 0; }
+  if (["pasaje", "taxi"].includes(c.tipo) || esPublico(c.tipo)) c.minutos = +val("minutos") || 0;
+  if (c.tipo === "ruta") {
+    f.querySelectorAll("[data-paso]").forEach(div => {
+      const p = c.pasos[+div.dataset.paso]; if (!p) return;
+      const v = (n) => div.querySelector(`[name="${n}"]`)?.value ?? "";
+      p.linea = v("linea").trim(); p.desde = v("desde").trim(); p.hasta = v("hasta").trim(); p.minutos = +v("minutos") || 0;
+    });
+  }
+}
+function configFormulario() { leerCampos(); return tramoForm.cfg; }
+
+function pintarFormTramo() {
+  const c = tramoForm.cfg;
+  $("#chipsTipo").innerHTML = TIPOS_TRAMO.map(t => `<button type="button" data-tipo="${t}" aria-pressed="${t === c.tipo}">${ICONO[t]} ${NOMBRE[t]}</button>`).join("");
+  $("#chipsTipo").querySelectorAll("button").forEach(b => b.onclick = () => {
+    leerCampos(); c.tipo = b.dataset.tipo;
+    if (c.tipo === "ruta" && !c.pasos.length) c.pasos = [{ tipo: "andando", minutos: 0 }, { tipo: "bus", minutos: 0 }];
+    pintarFormTramo();
+  });
+  const campo = (n, etiqueta, valor, tipo = "text") => `<label>${etiqueta}<input name="${n}" type="${tipo}" ${tipo === "number" ? 'min="0" max="999" inputmode="numeric"' : ""} value="${esc(valor ?? "")}"></label>`;
+  let html = "";
+  $("#btnGuardarTramo").textContent = "Guardar";
+  if (c.tipo === "andando") {
+    html = `<p class="nota">${c.porDonde.length ? `Ruta por calles pasando por ${c.porDonde.length} punto(s) que habéis elegido.`
+      : c.alternativa > 0 ? `Ruta por calles: alternativa ${c.alternativa + 1}.` : "La ruta más rápida por calles se calcula sola."}</p>
+      <button type="button" class="boton secundario ancho" id="btnAlternativas">🧭 Ver otras rutas a pie</button>
+      <button type="button" class="boton secundario ancho" id="btnAjustar">📍 Ajustar: pasar por aquí</button>
+      ${c.porDonde.length || c.alternativa ? `<button type="button" class="boton secundario ancho" id="btnRapida">Volver a la ruta más rápida</button>` : ""}`;
+  } else if (c.tipo === "pasaje") {
+    html = `<p class="nota">${c.puntos.length ? `Camino dibujado con ${c.puntos.length} puntos.` : "Dibuja en el mapa el camino: pasadizos, atajos, galerías…"}</p>
+      <button type="button" class="boton secundario ancho" id="btnDibujar">✏️ ${c.puntos.length ? "Volver a dibujar" : "Dibujar en el mapa"}</button>
+      ${campo("minutos", "Minutos (vacío = calcular solo)", c.minutos || "", "number")}`;
+  } else if (esPublico(c.tipo)) {
+    html = campo("linea", "Línea", c.linea) + `<div class="fila2">${campo("subida", "Os subís en", c.subida)}${campo("bajada", "Os bajáis en", c.bajada)}</div>
+      <div class="fila2">${campo("minutos", "Minutos de trayecto", c.minutos || "", "number")}${campo("frecuencia", "Pasa cada… (min)", c.frecuencia || "", "number")}</div>`;
+  } else if (c.tipo === "taxi") {
+    html = campo("minutos", "Minutos de trayecto", c.minutos || "", "number");
+  } else if (c.tipo === "ruta") {
+    html = `<p class="nota">Los pasos en orden: andar, bus, transbordo a metro…</p>` + c.pasos.map((p, i) => `
+      <div class="paso" data-paso="${i}">
+        <div class="cabeza"><span>Paso ${i + 1}${p.horaSalida ? ` · ${esc(p.horaSalida)} → ${esc(p.horaLlegada)}` : ""}</span>
+          <button type="button" class="icono" data-quitar="${i}" aria-label="Quitar paso">✕</button></div>
+        <div class="chips">${TIPOS_PASO.map(t => `<button type="button" data-ptipo="${t}" data-i="${i}" aria-pressed="${t === p.tipo}" aria-label="${NOMBRE[t]}">${ICONO[t]}</button>`).join("")}</div>
+        ${esPublico(p.tipo) ? campo("linea", "Línea", p.linea) : ""}
+        ${p.tipo !== "andando" ? `<div class="fila2">${campo("desde", "Desde", p.desde)}${campo("hasta", "Hasta", p.hasta)}</div>` : ""}
+        ${campo("minutos", "Minutos", p.minutos || "", "number")}
+      </div>`).join("") + `<button type="button" class="boton secundario ancho" id="btnAddPaso">＋ Añadir paso</button>
+      ${c.esperaMin ? `<p class="nota">Incluye ${c.esperaMin} min de esperas en transbordos.</p>` : ""}`;
+  }
+  $("#camposTramo").innerHTML = html;
+
+  const on = (id, fn) => { const el = $("#" + id); if (el) el.onclick = fn; };
+  on("btnAlternativas", () => { leerCampos(); $("#dlgTramo").close(); empezarModo("alternativas"); });
+  on("btnAjustar", () => { leerCampos(); $("#dlgTramo").close(); empezarModo("ajuste"); });
+  on("btnRapida", () => { leerCampos(); c.porDonde = []; c.alternativa = 0; pintarFormTramo(); });
+  on("btnDibujar", () => { leerCampos(); $("#dlgTramo").close(); empezarModo("dibujo"); });
+  on("btnAddPaso", () => { leerCampos(); c.pasos.push({ tipo: "andando", minutos: 0 }); pintarFormTramo(); });
+  $("#camposTramo").querySelectorAll("[data-quitar]").forEach(b => b.onclick = () => { leerCampos(); c.pasos.splice(+b.dataset.quitar, 1); pintarFormTramo(); });
+  $("#camposTramo").querySelectorAll("[data-ptipo]").forEach(b => b.onclick = () => { leerCampos(); c.pasos[+b.dataset.i].tipo = b.dataset.ptipo; pintarFormTramo(); });
+}
+
+/** Guarda la configuración del tramo en Firestore (con GeoPoint para los puntos). */
+async function guardarTramo(c) {
+  const { a } = tramoForm;
+  const ref = doc(db, "viajes", viajeId, "paradas", a.id);
+  const gp = (lista) => (lista || []).map(p => new GeoPoint(p.lat, p.lng));
+  const solo = (t, x, vacio) => t ? x : vacio;
+  if (c.tipo === "andando" && !c.notas && !c.porDonde.length && !c.alternativa) {
+    await updateDoc(ref, { tramo: deleteField() });
+    return;
+  }
+  const pub = esPublico(c.tipo);
+  await updateDoc(ref, { tramo: {
+    destinoId: c.destinoId, tipo: c.tipo,
+    linea: solo(pub, c.linea || "", ""), subida: solo(pub, c.subida || "", ""), bajada: solo(pub, c.bajada || "", ""),
+    minutos: c.tipo === "andando" ? 0 : (c.minutos || 0), frecuencia: solo(pub, c.frecuencia || 0, 0),
+    notas: c.notas || "",
+    puntos: c.tipo === "pasaje" ? gp(c.puntos) : [],
+    pasos: c.tipo === "ruta" ? c.pasos.map(p => ({
+      tipo: p.tipo || "andando", linea: p.linea || "", hacia: p.hacia || "", desde: p.desde || "", hasta: p.hasta || "",
+      horaSalida: p.horaSalida || "", horaLlegada: p.horaLlegada || "", minutos: p.minutos || 0, metros: p.metros || 0, puntos: gp(p.puntos)
+    })) : [],
+    esperaMin: c.tipo === "ruta" ? (c.esperaMin || 0) : 0,
+    horaSalida: c.tipo === "ruta" ? (c.horaSalida || "") : "",
+    porDonde: c.tipo === "andando" ? gp(c.porDonde) : [],
+    alternativa: c.tipo === "andando" ? (c.alternativa || 0) : 0
+  } });
+}
+
+// =====================================================================
+// Modos de mapa: dibujar pasaje, pasar por aquí, elegir alternativa
+// =====================================================================
+async function empezarModo(tipo) {
+  const { a, b, cfg } = tramoForm;
+  modo = { tipo, a, b, cfg, puntos: tipo === "ajuste" ? [...cfg.porDonde] : [], opciones: null, elegida: cfg.alternativa || 0 };
+  $("#pista").hidden = true;
+  pintar();
+  if (tipo === "alternativas") {
+    try {
+      const r = await fetch(`https://routing.openstreetmap.de/routed-foot/route/v1/driving/${a.lng.toFixed(6)},${a.lat.toFixed(6)};${b.lng.toFixed(6)},${b.lat.toFixed(6)}?overview=full&geometries=geojson&alternatives=3`);
+      const j = await r.json();
+      if (j.code !== "Ok") throw new Error();
+      if (modo) modo.opciones = j.routes.map(x => ({ metros: x.distance, segundos: x.duration, coords: x.geometry.coordinates }));
+    } catch { if (modo) modo.opciones = []; }
+    if (modo) { modo.elegida = Math.min(modo.elegida, Math.max(0, (modo.opciones?.length || 1) - 1)); pintar(); }
+  }
+}
+function terminarModo() { modo = null; $("#barraModo").hidden = true; pintar(); }
+
+function insertarPorDonde(a, b, lista, nuevo) {
+  const cadena = [a, ...lista, b];
+  let mejor = 1, coste = Infinity;
+  for (let k = 1; k < cadena.length; k++) {
+    const c = distancia(cadena[k - 1], nuevo) + distancia(nuevo, cadena[k]) - distancia(cadena[k - 1], cadena[k]);
+    if (c < coste) { coste = c; mejor = k; }
+  }
+  const r = [...lista]; r.splice(mejor - 1, 0, nuevo); return r;
+}
+
+function clicEnModo(punto) {
+  if (modo.tipo === "dibujo") modo.puntos.push(punto);
+  else if (modo.tipo === "ajuste") modo.puntos = insertarPorDonde(modo.a, modo.b, modo.puntos, punto);
+  else return;
+  pintar();
+}
+
+function pintarBarraModo() {
+  const barra = $("#barraModo");
+  if (!modo) { barra.hidden = true; return; }
+  barra.hidden = false;
+  const tit = `${esc(modo.a.nombre)} → ${esc(modo.b.nombre)}`;
+  if (modo.tipo === "alternativas") {
+    const ops = modo.opciones;
+    barra.innerHTML = `<b>🧭 ${tit}</b>
+      <p>${ops == null ? "Buscando rutas…" : !ops.length ? "No se pudieron cargar las rutas." : ops.length === 1 ? "Solo hay una ruta razonable por calles. Prueba «Pasar por aquí»." : "Elige una ruta; las demás se ven en gris."}</p>
+      ${ops && ops.length > 1 ? `<div class="chips">${ops.map((o, j) => `<button type="button" data-alt="${j}" aria-pressed="${j === modo.elegida}">${j === 0 ? "Más rápida" : "Opción " + (j + 1)}, ${fDist(o.metros)}, ${fMin(o.segundos / 60)}</button>`).join("")}</div>` : ""}
+      <div class="botones"><button type="button" class="boton secundario" id="mCancelar">Cancelar</button>
+      <button type="button" class="boton" id="mListo" ${ops?.length ? "" : "disabled"}>Usar esta</button></div>`;
+    barra.querySelectorAll("[data-alt]").forEach(b => b.onclick = () => { modo.elegida = +b.dataset.alt; pintar(); });
+  } else {
+    const dibujo = modo.tipo === "dibujo";
+    let medida = "";
+    if (dibujo) { const c = [modo.a, ...modo.puntos, modo.b]; let m = 0; for (let i = 1; i < c.length; i++) m += distancia(c[i - 1], c[i]); medida = `${modo.puntos.length} puntos, ${fDist(m)}`; }
+    else if (modo.previa) medida = `${fDist(modo.previa.metros)}, ${fMin(modo.previa.segundos / 60)}`;
+    barra.innerHTML = `<b>${dibujo ? "🪜" : "📍"} ${tit}</b>
+      <p>${dibujo ? "Toca el mapa por donde pasa el camino, en orden." : "Toca el mapa por donde queréis pasar; la ruta se recalcula por calles."} ${medida}</p>
+      <div class="botones"><button type="button" class="boton secundario" id="mDeshacer" ${modo.puntos.length ? "" : "disabled"}>Deshacer</button>
+      <button type="button" class="boton secundario" id="mCancelar">Cancelar</button>
+      <button type="button" class="boton" id="mListo">Listo</button></div>`;
+    $("#mDeshacer").onclick = () => { modo.puntos.pop(); pintar(); };
+  }
+  $("#mCancelar").onclick = terminarModo;
+  $("#mListo").onclick = async () => {
+    const c = { ...modo.cfg };
+    if (modo.tipo === "dibujo") Object.assign(c, { tipo: "pasaje", puntos: modo.puntos });
+    if (modo.tipo === "ajuste") Object.assign(c, { tipo: "andando", porDonde: modo.puntos, alternativa: 0 });
+    if (modo.tipo === "alternativas") Object.assign(c, { tipo: "andando", porDonde: [], alternativa: modo.elegida });
+    tramoForm = { a: modo.a, b: modo.b, cfg: c };
+    terminarModo();
+    await guardarTramo(c);
+  };
+}
+
+// =====================================================================
+// Sugerencias en transporte (Transitous)
+// =====================================================================
+const MODO_A_TIPO = (m) => m === "WALK" ? "andando" : ["BUS", "COACH"].includes(m) ? "bus" : ["SUBWAY", "METRO"].includes(m) ? "metro"
+  : ["TRAM", "CABLE_CAR", "FUNICULAR", "AERIAL_LIFT", "AREAL_LIFT"].includes(m) ? "tranvia" : m === "FERRY" ? "barco"
+  : ["CAR", "ODM", "RIDE_SHARING"].includes(m) ? "taxi" : "tren";
+let zonaDestino = null;
+
+/** Diferencia (min) entre la hora de una zona horaria y UTC en ese momento. */
+function desfase(fechaUtc, zona) {
+  const partes = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: zona, hourCycle: "h23",
+    year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).formatToParts(fechaUtc).map(p => [p.type, p.value]));
+  const comoUtc = Date.UTC(+partes.year, +partes.month - 1, +partes.day, +partes.hour % 24, +partes.minute);
+  return Math.round((comoUtc - fechaUtc.getTime()) / 60000);
+}
+/** "2026-12-30" + 600 min en "Europe/London" → Date (instante real) */
+function instante(fecha, minutos, zona) {
+  const [y, m, d] = fecha.split("-").map(Number);
+  const ingenuo = Date.UTC(y, m - 1, d, Math.floor(minutos / 60), minutos % 60);
+  return new Date(ingenuo - desfase(new Date(ingenuo), zona) * 60000);
+}
+const horaEn = (iso, zona) => new Date(iso).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", timeZone: zona });
+
+function decodificar(txt, precision) {
+  const f = 10 ** precision, pts = []; let i = 0, lat = 0, lng = 0;
+  while (i < txt.length) {
+    for (let eje = 0; eje < 2; eje++) {
+      let res = 0, sh = 0, b;
+      do { b = txt.charCodeAt(i++) - 63; res |= (b & 0x1f) << sh; sh += 5; } while (b >= 0x20 && i < txt.length);
+      const d = (res & 1) ? ~(res >> 1) : (res >> 1);
+      if (eje === 0) lat += d; else lng += d;
+    }
+    pts.push({ lat: lat / f, lng: lng / f });
+  }
+  if (pts.length <= 150) return pts;
+  const paso = pts.length / 149; return [...Array.from({ length: 149 }, (_, k) => pts[Math.floor(k * paso)]), pts.at(-1)];
+}
+
+async function consultarTransporte(a, b, fecha, minutos, zona) {
+  const t = instante(fecha, minutos, zona).toISOString();
+  const url = `https://api.transitous.org/api/v6/plan?fromPlace=${a.lat.toFixed(6)},${a.lng.toFixed(6)}&toPlace=${b.lat.toFixed(6)},${b.lng.toFixed(6)}` +
+    `&time=${encodeURIComponent(t)}&numItineraries=5&detailedTransfers=true&language=es&fastestDirectFactor=3.0`;
+  const j = await (await fetch(url)).json();
+  const tz = (j.itineraries || []).flatMap(it => it.legs).map(l => l.from?.tz).find(Boolean) || null;
+  const andando = j.direct?.[0]?.duration ? Math.ceil(j.direct[0].duration / 60) : null;
+  return { j, tz, andando };
+}
+
+async function abrirSugerencias(a, b) {
+  const dlg = $("#dlgSugerencias");
+  $("#tituloSug").textContent = `${a.nombre} → ${b.nombre}`;
+  const i = ultimoDelDia.findIndex(p => p.id === a.id);
+  const ini = viaje.fechaInicio ? new Date(viaje.fechaInicio + "T12:00:00") : null;
+  if (ini) ini.setDate(ini.getDate() + dia - 1);
+  const ahora = new Date();
+  $("#sugFecha").value = ini ? ini.toISOString().slice(0, 10) : "";
+  const salidaPlan = ultimasHoras[i]?.[1] ?? leerHora((viaje.horasSalida || {})[String(dia)]) ?? (ahora.getHours() * 60 + ahora.getMinutes());
+  $("#sugHora").value = fHora(salidaPlan);
+  const buscar = () => buscarTransporte(a, b);
+  $("#sugFecha").onchange = () => {
+    // Guardar la fecha del viaje (día 1) para la próxima vez
+    const f = new Date($("#sugFecha").value + "T12:00:00"); f.setDate(f.getDate() - (dia - 1));
+    updateDoc(doc(db, "viajes", viajeId), { fechaInicio: f.toISOString().slice(0, 10) }).catch(console.warn);
+    buscar();
+  };
+  $("#sugHora").onchange = buscar;
+  dlg.showModal();
+  buscar();
+}
+
+async function buscarTransporte(a, b) {
+  const caja = $("#sugResultados");
+  let fecha = $("#sugFecha").value;
+  const minutos = leerHora($("#sugHora").value);
+  if (!fecha) { caja.innerHTML = `<p class="nota">Elige qué día haréis este trayecto para buscar horarios.</p>`; return; }
+  if (minutos == null) return;
+  caja.innerHTML = `<p class="nota">Buscando rutas…</p>`;
+  try {
+    let zona = zonaDestino || Intl.DateTimeFormat().resolvedOptions().timeZone;
+    let { j, tz, andando } = await consultarTransporte(a, b, fecha, minutos, zona);
+    if (tz && tz !== zona) { zona = zonaDestino = tz; ({ j, andando } = await consultarTransporte(a, b, fecha, minutos, zona)); }
+    let referencia = "";
+    if (!(j.itineraries || []).length) {
+      // Sin horarios para esa fecha: mismo día de la semana más próximo
+      const objetivo = new Date(fecha + "T12:00:00").getDay(), d = new Date(); d.setHours(12);
+      while (d.getDay() !== objetivo) d.setDate(d.getDate() + 1);
+      const ref = d.toISOString().slice(0, 10);
+      if (ref !== fecha) {
+        const r2 = await consultarTransporte(a, b, ref, minutos, zona);
+        if ((r2.j.itineraries || []).length) { j = r2.j; referencia = d.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" }); }
+      }
+    }
+    const its = j.itineraries || [];
+    const opciones = its.map(it => {
+      const pasos = it.legs.map(l => ({
+        tipo: MODO_A_TIPO(l.mode), linea: l.routeShortName || l.displayName || "", hacia: l.headsign || "",
+        desde: l.from?.name === "START" ? a.nombre : (l.from?.name || ""), hasta: l.to?.name === "END" ? b.nombre : (l.to?.name || ""),
+        horaSalida: horaEn(l.startTime, zona), horaLlegada: horaEn(l.endTime, zona),
+        minutos: Math.ceil((l.duration || 0) / 60), metros: l.distance || 0,
+        puntos: l.legGeometry?.points ? decodificar(l.legGeometry.points, l.legGeometry.precision || 6) : []
+      })).filter(p => p.tipo !== "andando" || p.minutos >= 1);
+      const total = Math.ceil(it.duration / 60);
+      const primer = it.legs.find(l => l.mode !== "WALK");
+      let directo = "";
+      if (primer?.realTime) {
+        const r = Math.round((new Date(primer.startTime) - new Date(primer.scheduledStartTime)) / 60000);
+        directo = r > 0 ? `🔴 En directo, ${r} min de retraso` : r < 0 ? `🟢 En directo, ${-r} min adelantado` : "🟢 En directo, a su hora";
+      }
+      return { salida: horaEn(it.startTime, zona), llegada: horaEn(it.endTime, zona), total, transbordos: it.transfers || 0,
+        pasos, esperaMin: Math.max(0, total - pasos.reduce((x, p) => x + p.minutos, 0)), directo };
+    });
+    let html = andando ? `<p class="nota">🚶 Andando directamente: ${fMin(andando)}</p>` : "";
+    if (referencia) html += `<p class="nota">Aún no hay horarios publicados para esa fecha. Te enseño los del ${referencia} como referencia.</p>`;
+    if (!opciones.length) html += `<p class="nota">No hay rutas en transporte para este trayecto${andando ? "; andando compensa más" : ""}.</p>`;
+    html += opciones.map((o, k) => `<button type="button" class="opcion" data-op="${k}">
+      <span class="horas">${o.salida} → ${o.llegada}</span> <span class="nota">${fMin(o.total)}, ${o.transbordos === 0 ? "directo" : o.transbordos === 1 ? "1 transbordo" : o.transbordos + " transbordos"}</span>
+      ${o.directo ? `<small>${o.directo}</small>` : ""}
+      <div class="pasos">${o.pasos.map(p => `${ICONO[p.tipo]} ${p.tipo === "andando" ? p.minutos + "′" : esc(p.linea || NOMBRE[p.tipo])}`).join(" › ")}</div>
+      ${o.pasos.filter(p => p.tipo !== "andando").map(p => `<small>${ICONO[p.tipo]} ${esc(p.linea)}${p.hacia ? ` (hacia ${esc(p.hacia)})` : ""}: ${p.horaSalida} ${esc(p.desde)} → ${p.horaLlegada} ${esc(p.hasta)}</small>`).join("")}
+    </button>`).join("");
+    caja.innerHTML = html;
+    caja.querySelectorAll("[data-op]").forEach(btn => btn.onclick = async () => {
+      const o = opciones[+btn.dataset.op];
+      tramoForm = { a, b, cfg: copiaCfg(null, b) };
+      Object.assign(tramoForm.cfg, { tipo: "ruta", pasos: o.pasos, esperaMin: o.esperaMin, horaSalida: o.salida });
+      $("#dlgSugerencias").close();
+      await guardarTramo(tramoForm.cfg);
+    });
+  } catch (e) {
+    console.warn(e);
+    caja.innerHTML = `<p class="nota">No se pudieron cargar las rutas. Comprueba la conexión o prueba desde la app.</p>`;
+  }
 }
 </script>
 </body>
