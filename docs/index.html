@@ -100,6 +100,8 @@
     box-shadow: 0 1px 4px rgba(0,0,0,.2);
   }
   .parada.visitada .num { background: var(--oliva); }
+  button.num { cursor: pointer; padding: 0; font: inherit; font-weight: 700; font-size: .9rem; }
+  button.num:hover { transform: scale(1.12); }
   .parada.visitada .nombre { text-decoration: line-through; color: var(--suave); }
   .nombre { font-weight: 600; font-size: 1.05rem; border: 0; background: none; padding: 0; text-align: left; }
   .detalle { color: var(--suave); font-size: .88rem; margin-top: 2px; }
@@ -403,7 +405,7 @@ function montar() {
         <div class="asa" id="asa" title="Mostrar u ocultar la lista"><span class="raya"></span><button type="button" id="cerrarPanel" aria-label="Ocultar la lista">✕ Ocultar lista</button></div>
         <div class="resumen" id="resumen"></div>
         <ol class="paradas" id="lista"></ol>
-        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 20 (tipos propios)</p>
+        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 22 (sugerir orden)</p>
       </section>
       <button type="button" class="boton-lista" id="abrirPanel">☰ Ver la lista</button>
     </div>
@@ -822,6 +824,27 @@ async function pintar() {
       const idea = dia; dia = 1; await lote.commit(); pintar();
     };
   }
+  if (delDia.length >= 4 || ordenAnterior?.dia === dia) {
+    $("#resumen").insertAdjacentHTML("beforeend", `<div class="fila" style="margin-top:6px">
+      ${delDia.length >= 4 ? `<button type="button" class="boton secundario" id="btnSugerirOrden">✨ Sugerir orden</button>` : ""}
+      ${ordenAnterior?.dia === dia ? `<button type="button" class="boton secundario" id="btnDeshacerOrden">↩ Deshacer el orden</button>` : ""}
+    </div>`);
+    const bs = $("#btnSugerirOrden");
+    if (bs) bs.onclick = () => {
+      const sug = sugerirOrden(delDia);
+      if (!sug) { alert("👍 Este orden ya es de los mejores: moviendo las paradas libres no se ahorra camino que merezca la pena."); return; }
+      const texto = sug.orden.map((p, i) => `${i + 1}. ${p.nombre}${p.orden !== i + 1 ? `   ← antes ${p.orden}ª` : ""}`).join("\n");
+      if (confirm(`✨ Un orden mejor: andaríais unos ${fDist(sug.ahorro)} menos (≈ ${fMin(sug.ahorro / 75)}).\nLo que tiene hora o va en transporte se queda en su sitio.\n\n${texto}\n\n¿Aplicarlo?`)) {
+        ordenAnterior = { dia, ids: delDia.map(p => p.id) };
+        guardarOrden(sug.orden);
+      }
+    };
+    const bd = $("#btnDeshacerOrden");
+    if (bd) bd.onclick = () => {
+      const lista = ordenAnterior.ids.map(id => paradas.find(p => p.id === id)).filter(Boolean);
+      ordenAnterior = null; guardarOrden(lista); pintar();
+    };
+  }
   $("#horaSalida").onchange = (e) => updateDoc(doc(db, "viajes", viajeId), { [`horasSalida.${dia}`]: e.target.value });
   const auto = $("#salidaAuto");
   if (auto) auto.onclick = () => updateDoc(doc(db, "viajes", viajeId), { [`horasSalida.${dia}`]: "" });
@@ -847,7 +870,7 @@ async function pintar() {
       const t = tramos[i];
       return `<li>
         <div class="parada ${p.visitada ? "visitada" : ""}">
-          <span class="num" aria-hidden="true">${p.orden}</span>
+          <button type="button" class="num" data-pos="${i}" title="Cambiar de posición">${p.orden}</button>
           <div>
             <button class="nombre" data-ir="${p.id}" title="Ver en el mapa">${iconoCat(p.categoria) ? iconoCat(p.categoria) + " " : ""}${esc(p.nombre)}</button>
             ${detalle ? `<div class="detalle">${detalle}</div>` : ""}
@@ -873,6 +896,15 @@ async function pintar() {
     lista.querySelectorAll("[data-editar]").forEach(b => b.onclick = () => abrirEditar(paradas.find(x => x.id === b.dataset.editar)));
     lista.querySelectorAll("[data-visto]").forEach(c => c.onchange = () =>
       updateDoc(doc(db, "viajes", viajeId, "paradas", c.dataset.visto), { visitada: c.checked }));
+    // Tocar el número: ponerla directamente en otra posición
+    lista.querySelectorAll("[data-pos]").forEach(b => b.onclick = () => {
+      const i = +b.dataset.pos, p = delDia[i];
+      const r = prompt(`¿En qué posición pongo «${p.nombre}»? (de 1 a ${delDia.length}; ahora es la ${i + 1}ª)`, String(i + 1));
+      const n = parseInt(r, 10);
+      if (!n || n < 1 || n > delDia.length || n === i + 1) return;
+      const orden = [...delDia]; orden.splice(i, 1); orden.splice(n - 1, 0, p);
+      guardarOrden(orden);
+    });
     lista.querySelectorAll("[data-mover]").forEach(b => b.onclick = () => {
       const i = +b.dataset.mover, j = i + +b.dataset.dir;
       const orden = [...delDia]; const [p] = orden.splice(i, 1); orden.splice(j, 0, p);
@@ -994,6 +1026,56 @@ function guardarOrden(lista) {
   const lote = writeBatch(db); let cambios = 0;
   lista.forEach((p, i) => { if (p.orden !== i + 1) { lote.update(doc(db, "viajes", viajeId, "paradas", p.id), { orden: i + 1 }); cambios++; } });
   if (cambios) lote.commit().catch(console.warn);
+}
+
+// =====================================================================
+// Sugerir un orden mejor (andar menos), sin mover lo que tiene hora o va en transporte
+// =====================================================================
+let ordenAnterior = null; // { dia, ids } para deshacer
+function sugerirOrden(lista) {
+  if (lista.length < 4) return null;
+  const dd = (a, b) => distancia(a, b) * 1.3;
+  const largo = (l) => l.slice(1).reduce((x, p, i) => x + dd(l[i], p), 0);
+  const fijas = new Set();
+  lista.forEach((p, i) => {
+    if (p.horaReserva) fijas.add(p.id);
+    const sig = lista[i + 1], c = sig && configDe(p, sig);
+    if (c && c.tipo && c.tipo !== "andando") { fijas.add(p.id); fijas.add(sig.id); }
+  });
+  const ultima = lista.at(-1), ultimaFija = ultima.categoria === "hotel" || fijas.has(ultima.id);
+  const anclas = lista.map((p, i) => i).filter(i => i === 0 || fijas.has(lista[i].id) || (i === lista.length - 1 && ultimaFija));
+  const mejorTramo = (ini, libres, fin) => {
+    const coste = (l) => dd(ini, l[0]) + largo(l) + (fin ? dd(l.at(-1), fin) : 0);
+    if (libres.length <= 7) {
+      let mejor = libres, mc = coste(libres);
+      const perm = (l, k) => {
+        if (k === l.length) { const c = coste(l); if (c < mc - 0.01) { mc = c; mejor = [...l]; } return; }
+        for (let i = k; i < l.length; i++) { [l[k], l[i]] = [l[i], l[k]]; perm(l, k + 1); [l[k], l[i]] = [l[i], l[k]]; }
+      };
+      perm([...libres], 0); return mejor;
+    }
+    const pend = [...libres], ruta = []; let act = ini;
+    while (pend.length) { pend.sort((a, b) => dd(act, a) - dd(act, b)); act = pend.shift(); ruta.push(act); }
+    let mejora = true;
+    while (mejora) {
+      mejora = false;
+      for (let i = 0; i < ruta.length - 1; i++) for (let j = i + 1; j < ruta.length; j++) {
+        const p = [...ruta.slice(0, i), ...ruta.slice(i, j + 1).reverse(), ...ruta.slice(j + 1)];
+        if (coste(p) < coste(ruta) - 0.01) { ruta.splice(0, ruta.length, ...p); mejora = true; }
+      }
+    }
+    return ruta;
+  };
+  const res = [];
+  anclas.forEach((a, k) => {
+    res.push(lista[a]);
+    const b = anclas[k + 1];
+    const libres = lista.slice(a + 1, b ?? lista.length);
+    if (libres.length) res.push(...mejorTramo(lista[a], libres, b != null ? lista[b] : null));
+  });
+  const antes = largo(lista), despues = largo(res), ahorro = antes - despues;
+  if (ahorro < 200 || ahorro < antes * 0.05) return null;
+  return { orden: res, ahorro };
 }
 
 // =====================================================================
