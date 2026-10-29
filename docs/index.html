@@ -454,7 +454,7 @@ function montar() {
           <button type="button" class="boton secundario" id="btnImportarIdeas">💡 Importar ideas (archivo)</button>
           <input type="file" id="archivoIdeas" accept=".json,application/json" hidden>
         </p>
-        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 25 (consejos por país)</p>
+        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 26 (pronunciación inglés)</p>
       </section>
       <button type="button" class="boton-lista" id="abrirPanel">☰ Ver la lista</button>
     </div>
@@ -1092,6 +1092,7 @@ let FR = { categorias: [], frases: [] }, frasesPropias = [], idiomaF = localStor
 let catF = "basico", favoritasF = new Set(JSON.parse(localStorage.getItem("rumbo-favoritas") || "[]"));
 const norm = (t) => (t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9 ]+/g, " ");
 const textoF = (f) => idiomaF === "en" ? f.en : f.fr;
+const pronF = (f) => (idiomaF === "en" ? f.pronEn : f.pronFr) || "";
 const esF = (f) => idiomaF === "en" && f.esEn ? f.esEn : f.es;            // español (a veces cambia en inglés)
 const notaF = (f) => f.propia ? (f.nota || "") : (idiomaF === "en" ? f.notaEn : f.notaFr) || "";
 function oir(f) {
@@ -1103,7 +1104,7 @@ function oir(f) {
   speechSynthesis.cancel(); speechSynthesis.speak(u);
 }
 function enGrande(f) {
-  $("#grandeT").textContent = textoF(f); $("#grandeS").textContent = esF(f);
+  $("#grandeT").textContent = textoF(f); $("#grandeS").textContent = (pronF(f) ? `[${pronF(f)}]  ·  ` : "") + esF(f);
   $("#grandeOir").onclick = (e) => { e.stopPropagation(); oir(f); };
   $("#grande").hidden = false;
 }
@@ -1127,7 +1128,7 @@ function pintarFrases() {
   const vis = frasesVisibles();
   $("#frasesLista").innerHTML = vis.length ? vis.map((f, i) => `<div class="frase">
       <div><div class="es">${esc(esF(f))}</div><div class="dicho" data-grande="${i}" title="Mostrar en grande">${esc(textoF(f))}</div>
-      ${idiomaF === "fr" && f.pron ? `<div class="pron">[${esc(f.pron)}]</div>` : ""}${notaF(f) ? `<div class="nota">💡 ${esc(notaF(f))}</div>` : ""}</div>
+      ${pronF(f) ? `<div class="pron">[${esc(pronF(f))}]</div>` : ""}${notaF(f) ? `<div class="nota">💡 ${esc(notaF(f))}</div>` : ""}</div>
       <div class="botones-f"><button type="button" data-oir="${i}" aria-label="Escuchar">🔊</button>
       <button type="button" data-fav="${i}" aria-label="Favorita">${favoritasF.has(f.id) ? "⭐" : "☆"}</button>
       ${f.propia ? `<button type="button" data-borrar="${i}" aria-label="Borrar">🗑️</button>` : ""}</div></div>`).join("")
@@ -1152,7 +1153,7 @@ function repasar() {
     const f = mazo[0];
     if (!f) { $("#repasoCuerpo").innerHTML = `<p>🎉 ¡Las has repasado todas! Repite mañana: así se fija mejor.</p>`; $("#repasoBotones").innerHTML = `<button type="button" class="boton" id="rFin">Terminar</button>`; $("#rFin").onclick = () => dlg.close(); return; }
     $("#repasoCuerpo").innerHTML = `<div class="tarjeta-repaso" id="rTarjeta"><div class="nota">¿Cómo dirías…?</div><div class="p">${esc(esF(f))}</div>
-      ${vuelta ? `<div class="r">${esc(textoF(f))}</div>${idiomaF === "fr" && f.pron ? `<div class="nota">[${esc(f.pron)}]</div>` : ""}` : `<div class="nota">Dilo en voz alta y toca para ver la respuesta</div>`}</div>`;
+      ${vuelta ? `<div class="r">${esc(textoF(f))}</div>${pronF(f) ? `<div class="nota">[${esc(pronF(f))}]</div>` : ""}` : `<div class="nota">Dilo en voz alta y toca para ver la respuesta</div>`}</div>`;
     $("#rTarjeta").onclick = () => { vuelta = true; pinta(); };
     $("#repasoBotones").innerHTML = vuelta
       ? `<button type="button" class="boton secundario" id="rOir">🔊</button><button type="button" class="boton secundario" id="rOtra">↺ Otra vez</button><button type="button" class="boton" id="rSabia">✓ La sabía</button>`

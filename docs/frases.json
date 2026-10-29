@@ -52,1163 +52,1279 @@
    "es": "Hola / Buenos días",
    "fr": "Bonjour",
    "en": "Hello / Good morning",
-   "pron": "bonyúr",
    "id": "f001",
    "notaFr": "En Francia se saluda SIEMPRE al entrar en una tienda o al hablar con alguien: un «Bonjour» abre muchas puertas",
-   "notaEn": ""
+   "notaEn": "«Good morning» hasta las 12; después, «Good afternoon». Un «Hi» vale casi siempre",
+   "pronEn": "jeló / gud móonin",
+   "pronFr": "bonyúr"
   },
   {
    "cat": "basico",
    "es": "Buenas tardes / Buenas noches (al llegar)",
    "fr": "Bonsoir",
    "en": "Good evening",
-   "pron": "bonsuár",
    "id": "f002",
    "notaFr": "A partir de las 18:00 más o menos",
-   "notaEn": ""
+   "notaEn": "Para saludar a partir de las 18:00. «Good night» solo se dice al despedirse para irse a dormir",
+   "pronEn": "gud ívnin",
+   "pronFr": "bonsuár"
   },
   {
    "cat": "basico",
    "es": "Adiós, ¡que tenga buen día!",
    "fr": "Au revoir, bonne journée !",
    "en": "Goodbye, have a nice day!",
-   "pron": "o revuár, bon yurné",
    "id": "f003",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "gudbái, jav a náis déi",
+   "pronFr": "o revuár, bon yurné"
   },
   {
    "cat": "basico",
    "es": "Por favor",
    "fr": "S'il vous plaît",
    "en": "Please",
-   "pron": "sil vu plé",
    "id": "f004",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "En Reino Unido se usa muchísimo: ponlo al final de casi cualquier petición",
+   "pronEn": "plíis",
+   "pronFr": "sil vu plé"
   },
   {
    "cat": "basico",
    "es": "Muchas gracias",
    "fr": "Merci beaucoup",
    "en": "Thank you very much",
-   "pron": "mersí bocú",
    "id": "f005",
-   "notaFr": "",
-   "notaEn": ""
+   "notaFr": "Siempre acompañado de «Monsieur» o «Madame» suena más educado: «Merci, Madame»",
+   "notaEn": "En el día a día lo normal es «Thanks» o «Cheers»",
+   "pronEn": "zénk iu véri mach",
+   "pronFr": "mersí bocú"
   },
   {
    "cat": "basico",
    "es": "De nada",
    "fr": "De rien",
    "en": "You're welcome",
-   "pron": "de rián",
    "id": "f006",
-   "notaFr": "",
-   "notaEn": ""
+   "notaFr": "Más educado: «Je vous en prie» [ye vuz an prí]",
+   "notaEn": "",
+   "pronEn": "ior uélcam",
+   "pronFr": "de rián"
   },
   {
    "cat": "basico",
    "es": "Perdone (para llamar la atención)",
    "fr": "Excusez-moi",
    "en": "Excuse me",
-   "pron": "exkiusé muá",
    "id": "f007",
-   "notaFr": "",
-   "notaEn": ""
+   "notaFr": "Para pasar entre la gente se dice «Pardon» [pardón]",
+   "notaEn": "Para pasar entre la gente o llamar a alguien. Si chocas con alguien, se dice «Sorry»",
+   "pronEn": "ekskiús mi",
+   "pronFr": "exkiusé muá"
   },
   {
    "cat": "basico",
    "es": "Lo siento",
    "fr": "Je suis désolée",
    "en": "I'm sorry",
-   "pron": "ye suí dezolé",
    "id": "f008",
    "notaFr": "«désolée» porque lo dices tú; un hombre dice «désolé» (suena igual)",
-   "notaEn": ""
+   "notaEn": "Los británicos dicen «sorry» constantemente, también para pedir que te repitan algo («Sorry?»)",
+   "pronEn": "aim sóri",
+   "pronFr": "ye suí dezolé"
   },
   {
    "cat": "basico",
    "es": "Sí / No",
    "fr": "Oui / Non",
    "en": "Yes / No",
-   "pron": "uí / non",
    "id": "f009",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "iés / nóu",
+   "pronFr": "uí / non"
   },
   {
    "cat": "basico",
    "es": "No entiendo",
    "fr": "Je ne comprends pas",
    "en": "I don't understand",
-   "pron": "ye ne comprán pa",
    "id": "f010",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "ai dóunt anderstánd",
+   "pronFr": "ye ne comprán pa"
   },
   {
    "cat": "basico",
    "es": "¿Puede repetirlo más despacio, por favor?",
    "fr": "Vous pouvez répéter plus lentement, s'il vous plaît ?",
    "en": "Could you say that again more slowly, please?",
-   "pron": "vu puvé repeté plü lantmán, sil vu plé",
    "id": "f011",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "cud iu séi dat aguén mor slóuli, plíis",
+   "pronFr": "vu puvé repeté plü lantmán, sil vu plé"
   },
   {
    "cat": "basico",
    "es": "¿Habla inglés?",
    "fr": "Vous parlez anglais ?",
    "en": "Do you speak Spanish?",
-   "pron": "vu parlé anglé",
    "id": "f012",
    "notaFr": "",
    "notaEn": "",
-   "esEn": "¿Habla español?"
+   "esEn": "¿Habla español?",
+   "pronEn": "du iu spíik spánish",
+   "pronFr": "vu parlé anglé"
   },
   {
    "cat": "basico",
    "es": "Hablo un poco de francés",
    "fr": "Je parle un peu français",
    "en": "I only speak a little English",
-   "pron": "ye parl an pö fransé",
    "id": "f013",
    "notaFr": "",
    "notaEn": "",
-   "esEn": "Solo hablo un poco de inglés"
+   "esEn": "Solo hablo un poco de inglés",
+   "pronEn": "ai óunli spíik a lítel ínglish",
+   "pronFr": "ye parl an pö fransé"
   },
   {
    "cat": "basico",
    "es": "¿Cómo se dice … en francés?",
    "fr": "Comment on dit … en français ?",
    "en": "How do you say … in English?",
-   "pron": "comán on di … an fransé",
    "id": "f014",
    "notaFr": "",
    "notaEn": "",
-   "esEn": "¿Cómo se dice … en inglés?"
+   "esEn": "¿Cómo se dice … en inglés?",
+   "pronEn": "jáu du iu séi … in ínglish",
+   "pronFr": "comán on di … an fransé"
   },
   {
    "cat": "basico",
    "es": "¿Cuánto cuesta?",
    "fr": "C'est combien ?",
    "en": "How much is it?",
-   "pron": "sé combián",
    "id": "f015",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "jáu mach is it",
+   "pronFr": "sé combián"
   },
   {
    "cat": "basico",
    "es": "¿Dónde está el baño?",
    "fr": "Où sont les toilettes ?",
    "en": "Where are the toilets, please?",
-   "pron": "u son le tualét",
    "id": "f016",
    "notaFr": "",
-   "notaEn": "En Reino Unido también se dice «the loo»"
+   "notaEn": "En Reino Unido también se dice «the loo»",
+   "pronEn": "uér ar de tóilets, plíis",
+   "pronFr": "u son le tualét"
   },
   {
    "cat": "basico",
    "es": "¿Me puede ayudar?",
    "fr": "Vous pouvez m'aider ?",
    "en": "Could you help me, please?",
-   "pron": "vu puvé medé",
    "id": "f017",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "cud iu jelp mi, plíis",
+   "pronFr": "vu puvé medé"
   },
   {
    "cat": "basico",
    "es": "Somos tres",
    "fr": "Nous sommes trois",
    "en": "There are three of us",
-   "pron": "nu som truá",
    "id": "f018",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "dér ar zrí ov as",
+   "pronFr": "nu som truá"
   },
   {
    "cat": "basico",
    "es": "Un momento, por favor",
    "fr": "Un instant, s'il vous plaît",
    "en": "Just a moment, please",
-   "pron": "an anstán",
    "id": "f019",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "También se oye mucho «Hang on a sec»",
+   "pronEn": "yast a móument, plíis",
+   "pronFr": "an anstán"
   },
   {
    "cat": "basico",
    "es": "Vale / De acuerdo",
    "fr": "D'accord",
    "en": "OK / All right",
-   "pron": "dacór",
    "id": "f020",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "oukéi / ol ráit",
+   "pronFr": "dacór"
   },
   {
    "cat": "hotel",
    "es": "Tengo una reserva a nombre de …",
    "fr": "J'ai une réservation au nom de …",
    "en": "I have a booking under the name …",
-   "pron": "yé ün resservasión o non de",
    "id": "f021",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "ai jav a búkin ánder de néim",
+   "pronFr": "yé ün resservasión o non de"
   },
   {
    "cat": "hotel",
    "es": "Queremos hacer el check-in",
    "fr": "Nous voudrions faire l'enregistrement",
    "en": "We'd like to check in, please",
-   "pron": "nu vudrión fer lanreyistremán",
    "id": "f022",
-   "notaFr": "",
-   "notaEn": ""
+   "notaFr": "Tened a mano el DNI y la tarjeta de la reserva",
+   "notaEn": "Tened a mano el DNI o pasaporte: os lo pedirán, y la tarjeta de la reserva",
+   "pronEn": "uíd láik tu chek ín, plíis",
+   "pronFr": "nu vudrión fer lanreyistremán"
   },
   {
    "cat": "hotel",
    "es": "¿A qué hora es el desayuno?",
    "fr": "Le petit-déjeuner est à quelle heure ?",
    "en": "What time is breakfast?",
-   "pron": "le petí deyöné é a kel ör",
    "id": "f023",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "uát táim is brékfast",
+   "pronFr": "le petí deyöné é a kel ör"
   },
   {
    "cat": "hotel",
    "es": "¿Está incluido el desayuno?",
    "fr": "Le petit-déjeuner est compris ?",
    "en": "Is breakfast included?",
-   "pron": "le petí deyöné é comprí",
    "id": "f024",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "is brékfast inclúdid",
+   "pronFr": "le petí deyöné é comprí"
   },
   {
    "cat": "hotel",
    "es": "¿Podemos dejar las maletas aquí?",
    "fr": "Est-ce qu'on peut laisser nos bagages ici ?",
    "en": "Can we leave our luggage here?",
-   "pron": "eskón pö lesé no bagásh isí",
    "id": "f025",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "can uí líiv áuar lágich jíar",
+   "pronFr": "eskón pö lesé no bagásh isí"
   },
   {
    "cat": "hotel",
    "es": "¿A qué hora hay que dejar la habitación?",
    "fr": "À quelle heure faut-il libérer la chambre ?",
    "en": "What time is check-out?",
-   "pron": "a kel ör fotíl liberé la shambr",
    "id": "f026",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "uát táim is chék-aut",
+   "pronFr": "a kel ör fotíl liberé la shambr"
   },
   {
    "cat": "hotel",
    "es": "¿Podríamos dejar la habitación un poco más tarde?",
    "fr": "Est-ce qu'on pourrait partir un peu plus tard ?",
    "en": "Would a late check-out be possible?",
-   "pron": "eskón puré partír an pö plü tar",
    "id": "f027",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "uud a léit chék-aut bi pósibol",
+   "pronFr": "eskón puré partír an pö plü tar"
   },
   {
    "cat": "hotel",
    "es": "¿Cuál es la contraseña del wifi?",
    "fr": "Quel est le code du wifi ?",
    "en": "What's the wifi password?",
-   "pron": "kel é le cod dü uifí",
    "id": "f028",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "uáts de uáifai pásuerd",
+   "pronFr": "kel é le cod dü uifí"
   },
   {
    "cat": "hotel",
    "es": "La tarjeta de la habitación no funciona",
    "fr": "La carte de la chambre ne marche pas",
    "en": "The room key isn't working",
-   "pron": "la cart de la shambr ne marsh pa",
    "id": "f029",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "de rum kíi ísent uérkin",
+   "pronFr": "la cart de la shambr ne marsh pa"
   },
   {
    "cat": "hotel",
    "es": "¿Nos puede dar más toallas?",
    "fr": "Vous pourriez nous donner des serviettes en plus ?",
    "en": "Could we have some extra towels?",
-   "pron": "vu puriér nu doné de serviét an plüs",
    "id": "f030",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "cud uí jav sam ékstra táuels",
+   "pronFr": "vu puriér nu doné de serviét an plüs"
   },
   {
    "cat": "hotel",
    "es": "La calefacción no funciona",
    "fr": "Le chauffage ne marche pas",
    "en": "The heating isn't working",
-   "pron": "le shofásh ne marsh pa",
    "id": "f031",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "de jíitin ísent uérkin",
+   "pronFr": "le shofásh ne marsh pa"
   },
   {
    "cat": "hotel",
    "es": "¿Nos pueden pedir un taxi?",
    "fr": "Vous pouvez nous appeler un taxi ?",
    "en": "Could you call us a taxi?",
-   "pron": "vu puvé nuz aplé an taxí",
    "id": "f032",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "Los taxis negros de Londres («black cabs») se pueden parar por la calle si llevan la luz amarilla encendida",
+   "pronEn": "cud iu col as a táksi",
+   "pronFr": "vu puvé nuz aplé an taxí"
   },
   {
    "cat": "hotel",
    "es": "¿Organizan algo para Nochevieja?",
    "fr": "Vous organisez quelque chose pour le réveillon du Nouvel An ?",
    "en": "Are you doing anything for New Year's Eve?",
-   "pron": "vuz organisé kelke shos pur le reveión dü nuvél an",
    "id": "f033",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "ar iu dúin énizin for niú íiars íiv",
+   "pronFr": "vuz organisé kelke shos pur le reveión dü nuvél an"
   },
   {
    "cat": "hotel",
    "es": "Habitación número …",
    "fr": "Chambre numéro …",
    "en": "Room number …",
-   "pron": "shambr numeró",
    "id": "f034",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "rum námber",
+   "pronFr": "shambr numeró"
   },
   {
    "cat": "hotel",
    "es": "¿Nos pueden guardar las maletas hasta la tarde?",
    "fr": "Vous pouvez garder nos bagages jusqu'à cet après-midi ?",
    "en": "Could you keep our bags until this afternoon?",
-   "pron": "vu puvé gardé no bagásh yüská set apremidí",
    "id": "f035",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "cud iu kíip áuar bags antíl dis aftanún",
+   "pronFr": "vu puvé gardé no bagásh yüská set apremidí"
   },
   {
    "cat": "restaurante",
    "es": "Una mesa para tres, por favor",
    "fr": "Une table pour trois, s'il vous plaît",
    "en": "A table for three, please",
-   "pron": "ün tabl pur truá",
    "id": "f036",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "a téibol for zrí, plíis",
+   "pronFr": "ün tabl pur truá"
   },
   {
    "cat": "restaurante",
    "es": "Tenemos una reserva a nombre de …",
    "fr": "Nous avons réservé au nom de …",
    "en": "We have a reservation under the name …",
-   "pron": "nuz avón reservé o non de",
    "id": "f037",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "uí jav a reservéishon ánder de néim",
+   "pronFr": "nuz avón reservé o non de"
   },
   {
    "cat": "restaurante",
    "es": "¿Tienen alguna mesa libre?",
    "fr": "Vous avez une table de libre ?",
    "en": "Do you have a table free?",
-   "pron": "vuz avé ün tabl de libr",
    "id": "f038",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "du iu jav a téibol fríi",
+   "pronFr": "vuz avé ün tabl de libr"
   },
   {
    "cat": "restaurante",
    "es": "La carta, por favor",
    "fr": "La carte, s'il vous plaît",
    "en": "Could we see the menu, please?",
-   "pron": "la cart",
    "id": "f039",
    "notaFr": "Ojo: en francés «le menu» es un menú cerrado; la carta es «la carte»",
-   "notaEn": "En inglés «the menu» es la carta normal; un menú cerrado es «set menu»"
+   "notaEn": "En inglés «the menu» es la carta normal; un menú cerrado es «set menu»",
+   "pronEn": "cud uí síi de méniu, plíis",
+   "pronFr": "la cart"
   },
   {
    "cat": "restaurante",
    "es": "¿Qué nos recomienda?",
    "fr": "Qu'est-ce que vous nous conseillez ?",
    "en": "What would you recommend?",
-   "pron": "késke vu nu conseié",
    "id": "f040",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "uát uud iu recoménd",
+   "pronFr": "késke vu nu conseié"
   },
   {
    "cat": "restaurante",
    "es": "Quería …",
    "fr": "Je voudrais …",
    "en": "I'd like …, please",
-   "pron": "ye vudré",
    "id": "f041",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "aid láik … plíis",
+   "pronFr": "ye vudré"
   },
   {
    "cat": "restaurante",
    "es": "¿Qué lleva este plato?",
    "fr": "Qu'est-ce qu'il y a dans ce plat ?",
    "en": "What's in this dish?",
-   "pron": "keskilia dan se pla",
    "id": "f042",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "uáts in dis dish",
+   "pronFr": "keskilia dan se pla"
   },
   {
    "cat": "restaurante",
    "es": "Sin …, por favor",
    "fr": "Sans …, s'il vous plaît",
    "en": "Without …, please",
-   "pron": "san",
    "id": "f043",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "uidáut … plíis",
+   "pronFr": "san"
   },
   {
    "cat": "restaurante",
    "es": "Soy alérgica a …",
    "fr": "Je suis allergique à …",
    "en": "I'm allergic to …",
-   "pron": "ye suí alershík a",
    "id": "f044",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "aim alérchik tu",
+   "pronFr": "ye suí alershík a"
   },
   {
    "cat": "restaurante",
    "es": "Una jarra de agua, por favor",
    "fr": "Une carafe d'eau, s'il vous plaît",
    "en": "Tap water, please",
-   "pron": "ün caráf do",
    "id": "f045",
    "notaFr": "En Francia el agua del grifo en jarra es gratis y es lo normal pedirla",
-   "notaEn": "En Inglaterra los bares y restaurantes con licencia te tienen que dar agua del grifo gratis si la pides"
+   "notaEn": "En Inglaterra los bares y restaurantes con licencia te tienen que dar agua del grifo gratis si la pides",
+   "pronEn": "tap uóta, plíis",
+   "pronFr": "ün caráf do"
   },
   {
    "cat": "restaurante",
    "es": "Un café con leche",
    "fr": "Un café crème",
    "en": "A white coffee, please",
-   "pron": "an café crem",
    "id": "f046",
    "notaFr": "",
-   "notaEn": "En Londres casi todo el mundo pide «a latte» o «a flat white»"
+   "notaEn": "En Londres casi todo el mundo pide «a latte» o «a flat white»",
+   "pronEn": "a uáit cófi, plíis",
+   "pronFr": "an café crem"
   },
   {
    "cat": "restaurante",
    "es": "Un café solo",
    "fr": "Un café, s'il vous plaît",
    "en": "An espresso, please",
-   "pron": "an café",
    "id": "f047",
    "notaFr": "En Francia «un café» ya es un expreso",
-   "notaEn": "Un «americano» es el café largo; el expreso es «an espresso»"
+   "notaEn": "Un «americano» es el café largo; el expreso es «an espresso»",
+   "pronEn": "an esprésou, plíis",
+   "pronFr": "an café"
   },
   {
    "cat": "restaurante",
    "es": "Una copa de vino tinto / blanco",
    "fr": "Un verre de vin rouge / blanc",
    "en": "A glass of red / white wine",
-   "pron": "an ver de van ruy / blan",
    "id": "f048",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "a glas ov red / uáit uáin",
+   "pronFr": "an ver de van ruy / blan"
   },
   {
    "cat": "restaurante",
    "es": "La cuenta, por favor",
    "fr": "L'addition, s'il vous plaît",
    "en": "Could we have the bill, please?",
-   "pron": "ladisión",
    "id": "f049",
    "notaFr": "",
-   "notaEn": "En Reino Unido se dice «the bill»; «the check» es americano"
+   "notaEn": "En Reino Unido se dice «the bill»; «the check» es americano",
+   "pronEn": "cud uí jav de bil, plíis",
+   "pronFr": "ladisión"
   },
   {
    "cat": "restaurante",
    "es": "¿Puedo pagar con tarjeta?",
    "fr": "Je peux payer par carte ?",
    "en": "Can I pay by card?",
-   "pron": "ye pö peié par cart",
    "id": "f050",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "can ai péi bai card",
+   "pronFr": "ye pö peié par cart"
   },
   {
    "cat": "restaurante",
    "es": "¿El servicio está incluido?",
    "fr": "Le service est compris ?",
    "en": "Is service included?",
-   "pron": "le servís é comprí",
    "id": "f051",
    "notaFr": "En Francia la propina no es obligatoria: el servicio ya va incluido",
-   "notaEn": "En Londres muchos restaurantes ya añaden un 12,5 % de servicio a la cuenta («service charge»): míralo antes de dejar propina"
+   "notaEn": "En Londres muchos restaurantes ya añaden un 12,5 % de servicio a la cuenta («service charge»): míralo antes de dejar propina",
+   "pronEn": "is sérvis inclúdid",
+   "pronFr": "le servís é comprí"
   },
   {
    "cat": "restaurante",
    "es": "¡Estaba todo buenísimo!",
    "fr": "C'était délicieux, merci !",
    "en": "That was delicious, thank you!",
-   "pron": "seté delisiö",
    "id": "f052",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "dat uos dilíshos, zénk iu",
+   "pronFr": "seté delisiö"
   },
   {
    "cat": "restaurante",
    "es": "¿El menú de Nochevieja es cerrado o a la carta?",
    "fr": "Le menu du réveillon, c'est un menu fixe ou à la carte ?",
    "en": "Is the New Year's Eve menu a set menu or à la carte?",
-   "pron": "le menü dü reveión, set an menü fix u a la cart",
    "id": "f053",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "is de niú íiars íiv méniu a set méniu or a la cart",
+   "pronFr": "le menü dü reveión, set an menü fix u a la cart"
   },
   {
    "cat": "restaurante",
    "es": "Para llevar",
    "fr": "À emporter",
    "en": "To take away, please",
-   "pron": "a amporté",
    "id": "f054",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "tu téik euéi, plíis",
+   "pronFr": "a amporté"
   },
   {
    "cat": "restaurante",
    "es": "Para tomar aquí",
    "fr": "Sur place",
    "en": "To eat in, please",
-   "pron": "sür plas",
    "id": "f055",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "tu íit in, plíis",
+   "pronFr": "sür plas"
   },
   {
    "cat": "restaurante",
    "es": "¿Podemos sentarnos fuera / dentro?",
    "fr": "On peut s'asseoir dehors / à l'intérieur ?",
    "en": "Can we sit outside / inside?",
-   "pron": "on pö sasuár deór / a lanterriör",
    "id": "f056",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "can uí sit autsáid / insáid",
+   "pronFr": "on pö sasuár deór / a lanterriör"
   },
   {
    "cat": "transporte",
    "es": "Un billete para …, por favor",
    "fr": "Un billet pour …, s'il vous plaît",
    "en": "A ticket to …, please",
-   "pron": "an bié pur",
    "id": "f057",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "a tíket tu … plíis",
+   "pronFr": "an bié pur"
   },
   {
    "cat": "transporte",
    "es": "¿Qué línea va a …?",
    "fr": "Quelle ligne va à … ?",
    "en": "Which line goes to …?",
-   "pron": "kel liñ va a",
    "id": "f058",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "uich láin góus tu",
+   "pronFr": "kel liñ va a"
   },
   {
    "cat": "transporte",
    "es": "¿Dónde está la estación de metro más cercana?",
    "fr": "Où est la station de métro la plus proche ?",
    "en": "Where's the nearest tube station?",
-   "pron": "u é la stasión de metró la plü prosh",
    "id": "f059",
    "notaFr": "",
-   "notaEn": "En Londres el metro es «the Tube» o «the Underground»"
+   "notaEn": "En Londres el metro es «the Tube» o «the Underground»",
+   "pronEn": "uérs de níarest tiúb stéishon",
+   "pronFr": "u é la stasión de metró la plü prosh"
   },
   {
    "cat": "transporte",
    "es": "¿Este tren para en …?",
    "fr": "Ce train s'arrête à … ?",
    "en": "Does this train stop at …?",
-   "pron": "se tran sarét a",
    "id": "f060",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "das dis tréin stop at",
+   "pronFr": "se tran sarét a"
   },
   {
    "cat": "transporte",
    "es": "¿En qué parada me tengo que bajar?",
    "fr": "À quel arrêt je dois descendre ?",
    "en": "Which stop do I get off at?",
-   "pron": "a kel aré ye duá desándr",
    "id": "f061",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "uich stop du ai guet of at",
+   "pronFr": "a kel aré ye duá desándr"
   },
   {
    "cat": "transporte",
    "es": "¿Dónde se coge el bus para …?",
    "fr": "Où est-ce qu'on prend le bus pour … ?",
    "en": "Where do I catch the bus to …?",
-   "pron": "u eskón pran le büs pur",
    "id": "f062",
-   "notaFr": "",
-   "notaEn": ""
+   "notaFr": "Mejor llevar el billete ya comprado (app o máquina del metro) y validarlo al subir",
+   "notaEn": "En los buses de Londres no se paga en efectivo: solo tarjeta contactless o móvil",
+   "pronEn": "uér du ai cach de bas tu",
+   "pronFr": "u eskón pran le büs pur"
   },
   {
    "cat": "transporte",
    "es": "¿Cuánto se tarda hasta …?",
    "fr": "Il faut combien de temps pour aller à … ?",
    "en": "How long does it take to get to …?",
-   "pron": "il fo combián de tan pur alé a",
    "id": "f063",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "jáu long das it téik tu guet tu",
+   "pronFr": "il fo combián de tan pur alé a"
   },
   {
    "cat": "transporte",
    "es": "A esta dirección, por favor (taxi)",
    "fr": "À cette adresse, s'il vous plaît",
    "en": "To this address, please",
-   "pron": "a set adrés",
    "id": "f064",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "tu dis adrés, plíis",
+   "pronFr": "a set adrés"
   },
   {
    "cat": "transporte",
    "es": "¿Cuánto costará, más o menos?",
    "fr": "Ça coûtera combien, à peu près ?",
    "en": "Roughly how much will it be?",
-   "pron": "sa cutrá combián, a pö pre",
    "id": "f065",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "ráfli jáu mach uil it bi",
+   "pronFr": "sa cutrá combián, a pö pre"
   },
   {
    "cat": "transporte",
    "es": "Puede parar aquí, gracias",
    "fr": "Vous pouvez vous arrêter ici, merci",
    "en": "You can stop here, thanks",
-   "pron": "vu puvé vuz areté isí",
    "id": "f066",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "iu can stop jíar, zénks",
+   "pronFr": "vu puvé vuz areté isí"
   },
   {
    "cat": "transporte",
    "es": "¿Dónde está la salida?",
    "fr": "Où est la sortie ?",
    "en": "Where's the way out?",
-   "pron": "u é la sortí",
    "id": "f067",
    "notaFr": "",
-   "notaEn": "En el metro de Londres la salida se indica como «Way out»"
+   "notaEn": "En el metro de Londres la salida se indica como «Way out»",
+   "pronEn": "uérs de uéi áut",
+   "pronFr": "u é la sortí"
   },
   {
    "cat": "transporte",
    "es": "¿De qué andén sale?",
    "fr": "Il part de quel quai ?",
    "en": "Which platform does it leave from?",
-   "pron": "il par de kel ke",
    "id": "f068",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "uich plátform das it líiv from",
+   "pronFr": "il par de kel ke"
   },
   {
    "cat": "transporte",
    "es": "¿Se puede pagar con tarjeta en el torno?",
    "fr": "On peut payer par carte au portillon ?",
    "en": "Can I tap in with my card?",
-   "pron": "on pö peié par cart o portión",
    "id": "f069",
    "notaFr": "",
-   "notaEn": "En Londres basta con pasar la tarjeta contactless o el móvil por el lector, al entrar y al salir"
+   "notaEn": "En Londres basta con pasar la tarjeta contactless o el móvil por el lector, al entrar y al salir",
+   "pronEn": "can ai tap in uiz mai card",
+   "pronFr": "on pö peié par cart o portión"
   },
   {
    "cat": "orientarse",
    "es": "¿Por dónde se va a …?",
    "fr": "Pour aller à …, s'il vous plaît ?",
    "en": "How do I get to …, please?",
-   "pron": "pur alé a",
    "id": "f070",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "jáu du ai guet tu … plíis",
+   "pronFr": "pur alé a"
   },
   {
    "cat": "orientarse",
    "es": "Todo recto",
    "fr": "Tout droit",
    "en": "Straight on",
-   "pron": "tu druá",
    "id": "f071",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "stréit on",
+   "pronFr": "tu druá"
   },
   {
    "cat": "orientarse",
    "es": "A la derecha / a la izquierda",
    "fr": "À droite / à gauche",
    "en": "On the right / on the left",
-   "pron": "a druát / a gosh",
    "id": "f072",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "on de ráit / on de left",
+   "pronFr": "a druát / a gosh"
   },
   {
    "cat": "orientarse",
    "es": "¿Está lejos?",
    "fr": "C'est loin ?",
    "en": "Is it far?",
-   "pron": "sé luán",
    "id": "f073",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "is it far",
+   "pronFr": "sé luán"
   },
   {
    "cat": "orientarse",
    "es": "¿Se puede ir andando?",
    "fr": "On peut y aller à pied ?",
    "en": "Can we walk there?",
-   "pron": "on pö i alé a pié",
    "id": "f074",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "can uí uók dér",
+   "pronFr": "on pö i alé a pié"
   },
   {
    "cat": "orientarse",
    "es": "Estamos perdidos",
    "fr": "Nous sommes perdus",
    "en": "We're lost",
-   "pron": "nu som perdü",
    "id": "f075",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "uíar lost",
+   "pronFr": "nu som perdü"
   },
   {
    "cat": "orientarse",
    "es": "¿Me lo puede señalar en el mapa?",
    "fr": "Vous pouvez me le montrer sur la carte ?",
    "en": "Could you show me on the map?",
-   "pron": "vu puvé me le montré sür la cart",
    "id": "f076",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "cud iu shóu mi on de map",
+   "pronFr": "vu puvé me le montré sür la cart"
   },
   {
    "cat": "orientarse",
    "es": "Está cerca de aquí",
    "fr": "C'est près d'ici",
    "en": "It's near here",
-   "pron": "sé pre disí",
    "id": "f077",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "its níar jíar",
+   "pronFr": "sé pre disí"
   },
   {
    "cat": "tiendas",
    "es": "Solo estoy mirando, gracias",
    "fr": "Je regarde seulement, merci",
    "en": "I'm just looking, thanks",
-   "pron": "ye regárd sölmán",
    "id": "f078",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "aim yast lúkin, zénks",
+   "pronFr": "ye regárd sölmán"
   },
   {
    "cat": "tiendas",
    "es": "¿Lo tienen en otra talla?",
    "fr": "Vous l'avez dans une autre taille ?",
    "en": "Do you have this in another size?",
-   "pron": "vu lavé danz ün otr tai",
    "id": "f079",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "du iu jav dis in anáder sáis",
+   "pronFr": "vu lavé danz ün otr tai"
   },
   {
    "cat": "tiendas",
    "es": "¿Me lo puedo probar?",
    "fr": "Je peux l'essayer ?",
    "en": "Can I try it on?",
-   "pron": "ye pö leseié",
    "id": "f080",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "can ai trái it on",
+   "pronFr": "ye pö leseié"
   },
   {
    "cat": "tiendas",
    "es": "¿Dónde están los probadores?",
    "fr": "Où sont les cabines d'essayage ?",
    "en": "Where are the fitting rooms?",
-   "pron": "u son le cabín deseiásh",
    "id": "f081",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "uér ar de fítin rums",
+   "pronFr": "u son le cabín deseiásh"
   },
   {
    "cat": "tiendas",
    "es": "Me lo llevo",
    "fr": "Je le prends",
    "en": "I'll take it",
-   "pron": "ye le pran",
    "id": "f082",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "áil téik it",
+   "pronFr": "ye le pran"
   },
   {
    "cat": "tiendas",
    "es": "¿Me lo puede envolver para regalo?",
    "fr": "Vous pouvez faire un paquet cadeau ?",
    "en": "Could you gift-wrap it?",
-   "pron": "vu puvé fer an paké cadó",
    "id": "f083",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "cud iu guift-rap it",
+   "pronFr": "vu puvé fer an paké cadó"
   },
   {
    "cat": "tiendas",
    "es": "¿Hacen la devolución del IVA para turistas?",
    "fr": "Vous faites la détaxe ?",
    "en": "Do you do tax-free shopping?",
-   "pron": "vu fet la detáx",
    "id": "f084",
    "notaFr": "En Francia, si no sois de la UE se puede pedir… pero vosotros sois residentes en la UE, así que no aplica",
-   "notaEn": "En Reino Unido ya no hay «tax free» para turistas desde 2021"
+   "notaEn": "En Reino Unido ya no hay «tax free» para turistas desde 2021",
+   "pronEn": "du iu du taks-fríi shópin",
+   "pronFr": "vu fet la detáx"
   },
   {
    "cat": "tiendas",
    "es": "¿A qué hora cierran?",
    "fr": "Vous fermez à quelle heure ?",
    "en": "What time do you close?",
-   "pron": "vu fermé a kel ör",
    "id": "f085",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "uát táim du iu clóus",
+   "pronFr": "vu fermé a kel ör"
   },
   {
    "cat": "tiendas",
    "es": "Una bolsa, por favor",
    "fr": "Un sac, s'il vous plaît",
    "en": "Could I have a bag, please?",
-   "pron": "an sac",
    "id": "f086",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "cud ai jav a bag, plíis",
+   "pronFr": "an sac"
   },
   {
    "cat": "tiendas",
    "es": "¿Tienen esto en otro color?",
    "fr": "Vous l'avez dans une autre couleur ?",
    "en": "Do you have this in another colour?",
-   "pron": "vu lavé danz ün otr culör",
    "id": "f087",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "du iu jav dis in anáder cálor",
+   "pronFr": "vu lavé danz ün otr culör"
   },
   {
    "cat": "museos",
    "es": "Tres entradas, por favor",
    "fr": "Trois billets, s'il vous plaît",
    "en": "Three tickets, please",
-   "pron": "truá bié",
    "id": "f088",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "zrí tíkets, plíis",
+   "pronFr": "truá bié"
   },
   {
    "cat": "museos",
    "es": "Tenemos las entradas en el móvil",
    "fr": "Nous avons les billets sur le téléphone",
    "en": "We've got the tickets on my phone",
-   "pron": "nuz avón le bié sür le telefón",
    "id": "f089",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "uív got de tíkets on mai fóun",
+   "pronFr": "nuz avón le bié sür le telefón"
   },
   {
    "cat": "museos",
    "es": "¿Hay descuento para menores de 26?",
    "fr": "Il y a une réduction pour les moins de 26 ans ?",
    "en": "Is there a discount for under-26s?",
-   "pron": "ilia ün redüksión pur le muán de vant-siz an",
    "id": "f090",
    "notaFr": "En muchos museos nacionales de Francia los residentes en la UE menores de 26 entran gratis (¡tú sí!)",
-   "notaEn": "En Londres muchos museos grandes (British Museum, National Gallery, Natural History Museum…) son gratis para todos"
+   "notaEn": "En Londres muchos museos grandes (British Museum, National Gallery, Natural History Museum…) son gratis para todos",
+   "pronEn": "is der a díscaunt for ánder tuénti-síksis",
+   "pronFr": "ilia ün redüksión pur le muán de vant-siz an"
   },
   {
    "cat": "museos",
    "es": "¿Dónde está el guardarropa?",
    "fr": "Où est le vestiaire ?",
    "en": "Where's the cloakroom?",
-   "pron": "u é le vestiér",
    "id": "f091",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "uérs de clóukrum",
+   "pronFr": "u é le vestiér"
   },
   {
    "cat": "museos",
    "es": "¿Se pueden hacer fotos?",
    "fr": "On peut prendre des photos ?",
    "en": "Can we take photos?",
-   "pron": "on pö prandr de fotó",
    "id": "f092",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "can uí téik fóutous",
+   "pronFr": "on pö prandr de fotó"
   },
   {
    "cat": "museos",
    "es": "¿Dónde está la entrada?",
    "fr": "Où est l'entrée ?",
    "en": "Where's the entrance?",
-   "pron": "u é lantré",
    "id": "f093",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "uérs de éntrans",
+   "pronFr": "u é lantré"
   },
   {
    "cat": "museos",
    "es": "¿Hasta qué hora está abierto?",
    "fr": "C'est ouvert jusqu'à quelle heure ?",
    "en": "How late are you open?",
-   "pron": "set uvér yüská kel ör",
    "id": "f094",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "jáu léit ar iu óupen",
+   "pronFr": "set uvér yüská kel ör"
   },
   {
    "cat": "museos",
    "es": "¿Hay que reservar?",
    "fr": "Il faut réserver ?",
    "en": "Do we need to book?",
-   "pron": "il fo reservé",
    "id": "f095",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "du uí níid tu buk",
+   "pronFr": "il fo reservé"
   },
   {
    "cat": "museos",
    "es": "¿Hay audioguía en español?",
    "fr": "Il y a un audioguide en espagnol ?",
    "en": "Is there an audio guide in Spanish?",
-   "pron": "ilia an odiogíd an españól",
    "id": "f096",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "is der an ódiou gáid in spánish",
+   "pronFr": "ilia an odiogíd an españól"
   },
   {
    "cat": "problemas",
    "es": "¡Socorro!",
    "fr": "Au secours !",
    "en": "Help!",
-   "pron": "o secúr",
    "id": "f097",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "jelp",
+   "pronFr": "o secúr"
   },
   {
    "cat": "problemas",
    "es": "¡Llame a una ambulancia!",
    "fr": "Appelez une ambulance !",
    "en": "Call an ambulance!",
-   "pron": "aplé ün ambülans",
    "id": "f098",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "col an ámbiulans",
+   "pronFr": "aplé ün ambülans"
   },
   {
    "cat": "problemas",
    "es": "Necesito un médico",
    "fr": "J'ai besoin d'un médecin",
    "en": "I need a doctor",
-   "pron": "yé besuán dan medsán",
    "id": "f099",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "ai níid a dóctor",
+   "pronFr": "yé besuán dan medsán"
   },
   {
    "cat": "problemas",
    "es": "¿Dónde hay una farmacia?",
    "fr": "Où est la pharmacie la plus proche ?",
    "en": "Where's the nearest pharmacy?",
-   "pron": "u é la farmasí la plü prosh",
    "id": "f100",
    "notaFr": "",
-   "notaEn": "En Reino Unido también «chemist's»; la cadena más común es Boots"
+   "notaEn": "En Reino Unido también «chemist's»; la cadena más común es Boots",
+   "pronEn": "uérs de níarest fármasi",
+   "pronFr": "u é la farmasí la plü prosh"
   },
   {
    "cat": "problemas",
    "es": "Me duele aquí",
    "fr": "J'ai mal ici",
    "en": "It hurts here",
-   "pron": "yé mal isí",
    "id": "f101",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "it jérts jíar",
+   "pronFr": "yé mal isí"
   },
   {
    "cat": "problemas",
    "es": "He perdido el móvil / la cartera",
    "fr": "J'ai perdu mon téléphone / mon portefeuille",
    "en": "I've lost my phone / my wallet",
-   "pron": "yé perdü mon telefón / mon portföi",
    "id": "f102",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "áiv lost mai fóun / mai uólet",
+   "pronFr": "yé perdü mon telefón / mon portföi"
   },
   {
    "cat": "problemas",
    "es": "Me han robado …",
    "fr": "On m'a volé …",
    "en": "Someone's stolen my …",
-   "pron": "on ma volé",
    "id": "f103",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "sámuans stóulen mai",
+   "pronFr": "on ma volé"
   },
   {
    "cat": "problemas",
    "es": "¿Dónde está la comisaría?",
    "fr": "Où est le commissariat ?",
    "en": "Where's the police station?",
-   "pron": "u é le comisariá",
    "id": "f104",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "uérs de polís stéishon",
+   "pronFr": "u é le comisariá"
   },
   {
    "cat": "problemas",
    "es": "Hemos perdido el tren",
    "fr": "Nous avons raté le train",
    "en": "We've missed our train",
-   "pron": "nuz avón raté le tran",
    "id": "f105",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "uív mist áuar tréin",
+   "pronFr": "nuz avón raté le tran"
   },
   {
    "cat": "problemas",
    "es": "¿Cuál es el número de emergencias?",
    "fr": "Quel est le numéro d'urgence ?",
    "en": "What's the emergency number?",
-   "pron": "kel é le numeró dürjáns",
    "id": "f106",
    "notaFr": "El 112 funciona en toda Europa",
-   "notaEn": "El 112 funciona en toda Europa; en Reino Unido también el 999"
+   "notaEn": "El 112 funciona en toda Europa; en Reino Unido también el 999",
+   "pronEn": "uáts de imérchensi námber",
+   "pronFr": "kel é le numeró dürjáns"
   },
   {
    "cat": "conversacion",
    "es": "Somos de España, de Madrid",
    "fr": "Nous venons d'Espagne, de Madrid",
    "en": "We're from Spain, from Madrid",
-   "pron": "nu venón despáñ, de madríd",
    "id": "f107",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "uíar from spéin, from madríd",
+   "pronFr": "nu venón despáñ, de madríd"
   },
   {
    "cat": "conversacion",
    "es": "Es nuestra primera vez aquí",
    "fr": "C'est notre première fois ici",
    "en": "It's our first time here",
-   "pron": "sé notr premiér fuá isí",
    "id": "f108",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "its áuar ferst táim jíar",
+   "pronFr": "sé notr premiér fuá isí"
   },
   {
    "cat": "conversacion",
    "es": "Me llamo Marta",
    "fr": "Je m'appelle Marta",
    "en": "My name is Marta",
-   "pron": "ye mapél marta",
    "id": "f109",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "mai néim is márta",
+   "pronFr": "ye mapél marta"
   },
   {
    "cat": "conversacion",
    "es": "Encantada",
    "fr": "Enchantée",
    "en": "Nice to meet you",
-   "pron": "anshanté",
    "id": "f110",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "náis tu míit iu",
+   "pronFr": "anshanté"
   },
   {
    "cat": "conversacion",
    "es": "¿Nos puede hacer una foto?",
    "fr": "Vous pourriez nous prendre en photo ?",
    "en": "Could you take a photo of us, please?",
-   "pron": "vu puriér nu prandr an fotó",
    "id": "f111",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "cud iu téik a fóutou ov as, plíis",
+   "pronFr": "vu puriér nu prandr an fotó"
   },
   {
    "cat": "conversacion",
    "es": "¡Qué bonito!",
    "fr": "C'est magnifique !",
    "en": "It's beautiful!",
-   "pron": "sé mañifík",
    "id": "f112",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "its biútiful",
+   "pronFr": "sé mañifík"
   },
   {
    "cat": "conversacion",
    "es": "¡Feliz Año Nuevo!",
    "fr": "Bonne année !",
    "en": "Happy New Year!",
-   "pron": "bon ané",
    "id": "f113",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "jápi niú íiar",
+   "pronFr": "bon ané"
   },
   {
    "cat": "conversacion",
    "es": "¡Salud! (al brindar)",
    "fr": "Santé ! / Tchin-tchin !",
    "en": "Cheers!",
-   "pron": "santé / chin chin",
    "id": "f114",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "Sirve para brindar y también como «gracias» informal",
+   "pronEn": "chíars",
+   "pronFr": "santé / chin chin"
   },
   {
    "cat": "conversacion",
    "es": "¡Que aproveche!",
    "fr": "Bon appétit !",
    "en": "Enjoy your meal!",
-   "pron": "bon apetí",
    "id": "f115",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "enyói ior míil",
+   "pronFr": "bon apetí"
   },
   {
    "cat": "conversacion",
    "es": "¡Que tengan buena noche!",
    "fr": "Bonne soirée !",
    "en": "Have a lovely evening!",
-   "pron": "bon suaré",
    "id": "f116",
    "notaFr": "",
-   "notaEn": ""
+   "notaEn": "",
+   "pronEn": "jav a lávli ívnin",
+   "pronFr": "bon suaré"
   }
  ]
 }
