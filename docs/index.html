@@ -165,10 +165,7 @@
 <dialog id="dlgParada">
   <form method="dialog" id="formParada">
     <h2 id="tituloParada">Nueva parada</h2>
-    <label>Tipo<select name="categoria">
-      <option value="visita">📍 Visita</option><option value="comida">🍽️ Comida</option><option value="hotel">🏨 Hotel</option>
-      <option value="aeropuerto">🛫 Aeropuerto</option><option value="estacion">🚉 Estación</option><option value="otro">⭐ Otro</option>
-    </select></label>
+    <label>Tipo<select name="categoria"></select></label>
     <label>Nombre<input name="nombre" required autocomplete="off"></label>
     <label>Tiempo de visita (minutos)<input name="minutos" type="number" min="0" max="999" inputmode="numeric"></label>
     <div class="fila2">
@@ -291,6 +288,28 @@ const distancia = (a, b) => {
 const coord = (g) => ({ lat: g.latitude ?? g.lat, lng: g.longitude ?? g.lng });
 
 const CATEGORIA = { visita: "", comida: "🍽️", hotel: "🏨", aeropuerto: "🛫", estacion: "🚉", otro: "⭐" };
+const BASE_CATEGORIAS = [["visita", "📍 Visita"], ["comida", "🍽️ Comida"], ["hotel", "🏨 Hotel"], ["aeropuerto", "🛫 Aeropuerto"], ["estacion", "🚉 Estación"], ["otro", "⭐ Otro"]];
+const ICONOS_CATEGORIA = ["🛍️", "🎁", "📚", "☕", "🍰", "🍺", "🍷", "🥐", "🎭", "🎨", "🏛️", "⛪", "🌳", "🎡", "🎄", "📸", "🧸", "🎵", "⚽", "🏪", "🧀", "⭐", "❤️"];
+/** Icono de un tipo de parada (de los de siempre o de los creados en el viaje) */
+const iconoCat = (c) => viaje?.categoriasPropias?.[c]?.icono ?? CATEGORIA[c] ?? "";
+function rellenarCategorias(sel, actual) {
+  const propias = Object.entries(viaje?.categoriasPropias || {}).sort((a, b) => (a[1].nombre || "").localeCompare(b[1].nombre || ""));
+  sel.innerHTML = BASE_CATEGORIAS.map(([v, t]) => `<option value="${v}">${t}</option>`).join("") +
+    propias.map(([id, c]) => `<option value="${esc(id)}">${esc(c.icono || "⭐")} ${esc(c.nombre || id)}</option>`).join("") +
+    `<option value="__nuevo">＋ Nuevo tipo…</option>`;
+  sel.value = actual || "visita";
+  sel.dataset.anterior = sel.value;
+  sel.onchange = async () => {
+    if (sel.value !== "__nuevo") { sel.dataset.anterior = sel.value; return; }
+    const nombre = (prompt("Nombre del nuevo tipo de parada (p. ej. «Tiendas»):") || "").trim();
+    if (!nombre) { sel.value = sel.dataset.anterior; return; }
+    const icono = (prompt("Elige un icono (copia uno o escribe el tuyo):\n" + ICONOS_CATEGORIA.join("  "), "🛍️") || "⭐").trim();
+    const id = "p-" + nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 30);
+    await updateDoc(doc(db, "viajes", viajeId), new FieldPath("categoriasPropias", id), { icono, nombre });
+    viaje.categoriasPropias = { ...(viaje.categoriasPropias || {}), [id]: { icono, nombre } };
+    rellenarCategorias(sel, id);
+  };
+}
 function etiquetaDia(d) {
   if (d < 1) return "💡 " + ((viaje?.rutasIdea || {})[String(d)] || "Ruta sin día");
   if (!viaje?.fechaInicio) return `Día ${d}`;
@@ -374,7 +393,7 @@ function montar() {
       <div class="mapa-caja">
         <div id="mapa"></div>
         <div class="buscador">
-          <input id="busca" type="search" placeholder="Buscar un sitio para añadir" autocomplete="off" aria-label="Buscar un sitio">
+          <input id="busca" type="search" placeholder="Buscar un sitio, o pegar un enlace de Google Maps" autocomplete="off" aria-label="Buscar un sitio">
           <div class="resultados" id="resultados" hidden></div>
         </div>
         <div class="pista" id="pista">Toca el mapa para añadir una parada</div>
@@ -384,7 +403,7 @@ function montar() {
         <div class="asa" id="asa" title="Mostrar u ocultar la lista"><span class="raya"></span><button type="button" id="cerrarPanel" aria-label="Ocultar la lista">✕ Ocultar lista</button></div>
         <div class="resumen" id="resumen"></div>
         <ol class="paradas" id="lista"></ol>
-        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 18 (salida calculada)</p>
+        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 20 (tipos propios)</p>
       </section>
       <button type="button" class="boton-lista" id="abrirPanel">☰ Ver la lista</button>
     </div>
@@ -540,11 +559,43 @@ function cambiarMapa(t) {
   mapa.setStyle(ESTILOS[t], { diff: false });
 }
 
+/** Enlace de Google Maps o coordenadas -> sitio exacto (o null). */
+function sitioDirecto(q) {
+  const coords = q.match(/^\s*(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)\s*$/);
+  if (coords) return { nombre: "Punto del mapa", lat: +coords[1], lng: +coords[2] };
+  if (!/google\.[a-z.]+\/maps|goo\.gl/.test(q)) return null;
+  if (/goo\.gl/.test(q)) return { corto: true };
+  let t = q; try { t = decodeURIComponent(q.replace(/\+/g, " ")); } catch {}
+  const m = [...t.matchAll(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/g)].pop() || t.match(/[?&](?:q|query|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/) || t.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+  if (!m) return null;
+  const nombre = (t.match(/\/place\/([^/@]+)/) || [])[1];
+  return { nombre: (nombre || "Sitio de Google Maps").trim(), lat: +m[1], lng: +m[2] };
+}
+
 async function buscar(q) {
   const c = mapa.getCenter();
+  const directo = sitioDirecto(q);
+  if (directo) {
+    const caja = $("#resultados");
+    if (directo.corto) {
+      caja.innerHTML = `<button type="button" disabled>Ese es un enlace corto: en Google Maps, abre el sitio en el ordenador y copia la dirección de la barra de arriba (la larga). En la app de Rumbo sí funcionan los cortos.</button>`;
+      caja.hidden = false; return;
+    }
+    caja.innerHTML = `<button type="button" id="resDirecto">📍 ${esc(directo.nombre)}<small>${directo.lat.toFixed(5)}, ${directo.lng.toFixed(5)}</small></button>`;
+    caja.hidden = false;
+    $("#resDirecto").onclick = () => {
+      caja.hidden = true; $("#busca").value = "";
+      mapa.flyTo({ center: [directo.lng, directo.lat], zoom: 17 });
+      abrirNueva({ lat: directo.lat, lng: directo.lng }, directo.nombre === "Punto del mapa" ? "" : directo.nombre);
+    };
+    return;
+  }
   try {
-    const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=6&lat=${c.lat}&lon=${c.lng}`);
+    const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=8&lat=${c.lat}&lon=${c.lng}`);
     const j = await r.json();
+    // Si hay resultados cerca de lo que estás mirando, quitar los de otros países
+    const cerca = j.features.filter(f => distancia({ lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0] }, { lat: c.lat, lng: c.lng }) < 150000);
+    if (cerca.length) j.features = cerca;
     const caja = $("#resultados");
     caja.innerHTML = j.features.map((f, i) => {
       const p = f.properties;
@@ -798,7 +849,7 @@ async function pintar() {
         <div class="parada ${p.visitada ? "visitada" : ""}">
           <span class="num" aria-hidden="true">${p.orden}</span>
           <div>
-            <button class="nombre" data-ir="${p.id}" title="Ver en el mapa">${CATEGORIA[p.categoria] ? CATEGORIA[p.categoria] + " " : ""}${esc(p.nombre)}</button>
+            <button class="nombre" data-ir="${p.id}" title="Ver en el mapa">${iconoCat(p.categoria) ? iconoCat(p.categoria) + " " : ""}${esc(p.nombre)}</button>
             ${detalle ? `<div class="detalle">${detalle}</div>` : ""}
             <label class="visto"><input type="checkbox" data-visto="${p.id}" ${p.visitada ? "checked" : ""}> Visitado</label>
           </div>
@@ -861,7 +912,7 @@ function abrirNueva(punto, nombre) {
   const f = $("#formParada");
   $("#tituloParada").textContent = "Nueva parada";
   f.nombre.value = nombre; f.minutos.value = ""; f.notas.value = "";
-  f.categoria.value = "visita"; f.horaReserva.value = ""; f.codigo.value = "";
+  rellenarCategorias(f.categoria, "visita"); f.horaReserva.value = ""; f.codigo.value = "";
   rellenarDias(f.dia, dia);
   $("#btnBorrar").hidden = true;
   $("#btnMover").hidden = true;
@@ -873,7 +924,7 @@ function abrirEditar(p) {
   const f = $("#formParada");
   $("#tituloParada").textContent = "Editar parada";
   f.nombre.value = p.nombre || ""; f.minutos.value = p.minutosVisita || ""; f.notas.value = p.notas || "";
-  f.categoria.value = p.categoria || "visita"; f.horaReserva.value = p.horaReserva || ""; f.codigo.value = p.codigoReserva || "";
+  rellenarCategorias(f.categoria, p.categoria || "visita"); f.horaReserva.value = p.horaReserva || ""; f.codigo.value = p.codigoReserva || "";
   rellenarDias(f.dia, p.dia || 1);
   $("#btnBorrar").hidden = false;
   $("#btnMover").hidden = false;
@@ -883,7 +934,7 @@ async function guardarParada(e) {
   e.preventDefault();
   const f = e.target;
   const datos = { nombre: f.nombre.value.trim(), minutosVisita: +f.minutos.value || 0, notas: f.notas.value.trim(),
-    categoria: f.categoria.value, horaReserva: f.horaReserva.value || "", codigoReserva: f.codigo.value.trim() };
+    categoria: f.categoria.value === "__nuevo" ? "visita" : f.categoria.value, horaReserva: f.horaReserva.value || "", codigoReserva: f.codigo.value.trim() };
   const d = +f.dia.value || 1;
   if (!datos.nombre) return;
   const enDia = paradas.filter(p => (p.dia || 1) === d && p.id !== editando?.id);
