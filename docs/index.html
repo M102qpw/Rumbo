@@ -136,6 +136,32 @@
   }
   .barra-modo p { margin: 2px 0 8px; font-size: .88rem; color: var(--suave); }
   .barra-modo .botones { margin-top: 6px; }
+  /* ---------- Frases ---------- */
+  .capa-frases { position: fixed; inset: 0; z-index: 20; background: var(--papel); display: flex; flex-direction: column; }
+  .capa-frases[hidden] { display: none; }
+  .frases-cab { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--linea); flex-wrap: wrap; }
+  .frases-cab h2 { margin: 0; font-size: 1.2rem; flex: 1; }
+  .frases-cab input[type=search] { width: 100%; border: 1.5px solid var(--linea); border-radius: 999px; padding: 9px 16px; background: var(--superficie); }
+  .frases-cats { display: flex; gap: 6px; overflow-x: auto; padding: 8px 14px; flex-wrap: wrap; }
+  .frases-cats button, .idiomas button { border: 1.5px solid var(--linea); background: transparent; border-radius: 999px; padding: 5px 12px; white-space: nowrap; }
+  .frases-cats button[aria-pressed="true"], .idiomas button[aria-pressed="true"] { background: var(--oliva-claro); border-color: var(--oliva); font-weight: 600; }
+  .idiomas { display: flex; gap: 6px; }
+  .frases-lista { overflow-y: auto; padding: 4px 14px 90px; display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); align-content: start; }
+  .frase { background: var(--superficie); border-radius: 16px; padding: 12px 10px 12px 14px; display: grid; grid-template-columns: 1fr auto; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+  .frase .es { color: var(--suave); font-size: .85rem; }
+  .frase .dicho { font-weight: 700; font-size: 1.12rem; cursor: pointer; }
+  .frase .pron { color: var(--terracota); font-size: .85rem; }
+  .frase .nota { color: var(--suave); font-size: .82rem; margin-top: 2px; }
+  .frase .botones-f { display: flex; flex-direction: column; gap: 2px; }
+  .frase .botones-f button { border: 0; background: transparent; font-size: 1.1rem; width: 36px; height: 34px; border-radius: 10px; }
+  .frase .botones-f button:hover { background: var(--linea); }
+  .grande { position: fixed; inset: 0; z-index: 30; background: #1C1916; color: #fff; display: grid; place-items: center; padding: 28px; text-align: center; }
+  .grande[hidden] { display: none; }
+  .grande .t { font-size: clamp(2rem, 7vw, 4rem); font-weight: 700; line-height: 1.15; }
+  .grande .s { color: #CFC4BA; margin-top: 16px; font-size: 1.1rem; }
+  .tarjeta-repaso { text-align: center; padding: 10px 0; cursor: pointer; }
+  .tarjeta-repaso .p { font-size: 1.3rem; margin: 10px 0; }
+  .tarjeta-repaso .r { font-size: 1.5rem; font-weight: 700; color: var(--terracota); }
   dialog .fila2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .vacio { padding: 28px 18px; color: var(--suave); }
 
@@ -211,6 +237,24 @@
   <div class="botones"><button type="button" class="boton secundario" id="btnCerrarSug">Cerrar</button></div>
 </dialog>
 
+<div class="capa-frases" id="capaFrases" hidden>
+  <div class="frases-cab">
+    <h2>🗣️ Frases del viaje</h2>
+    <div class="idiomas" id="idiomas">
+      <button type="button" data-idioma="fr">🇫🇷 Francés</button><button type="button" data-idioma="en">🇬🇧 Inglés</button>
+    </div>
+    <button type="button" class="boton secundario" id="btnRepasar">🃏 Repasar</button>
+    <button type="button" class="boton secundario" id="btnFraseMia">＋ Frase mía</button>
+    <button type="button" class="boton" id="btnCerrarFrases">Cerrar</button>
+    <input type="search" id="buscaFrase" placeholder="Buscar (p. ej. maletas, cuenta, metro…)">
+  </div>
+  <nav class="frases-cats" id="frasesCats"></nav>
+  <div class="frases-lista" id="frasesLista"></div>
+</div>
+<div class="grande" id="grande" hidden><div><div class="t" id="grandeT"></div><div class="s" id="grandeS"></div>
+  <div class="botones" style="justify-content:center"><button type="button" class="boton" id="grandeOir">🔊 Escuchar</button><button type="button" class="boton secundario" id="grandeCerrar" style="color:#fff">Cerrar</button></div></div></div>
+<dialog id="dlgRepaso"><h2 id="repasoTit">🃏 Repasar</h2><div id="repasoCuerpo"></div><div class="botones" id="repasoBotones"></div></dialog>
+
 <dialog id="dlgAsignar">
   <h2>¿Qué día hacéis esta ruta?</h2>
   <p class="nota">Sus paradas se añaden al final del día elegido, antes de volver al hotel.</p>
@@ -232,7 +276,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/fireba
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, updateDoc, onSnapshot, collection, addDoc, writeBatch,
-  arrayUnion, serverTimestamp, deleteField, GeoPoint, FieldPath
+  arrayUnion, serverTimestamp, deleteField, GeoPoint, FieldPath, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 // Configuración web del proyecto Rumbo en Firebase
@@ -381,6 +425,7 @@ function montar() {
   <div class="app">
     <header class="barra">
       <h1 id="titulo"></h1><p class="quien" id="quien"></p>
+      <button type="button" class="tipo-mapa" id="abrirFrases" title="Frases en francés e inglés">🗣️ Frases</button>
       <select id="tipoMapa" class="tipo-mapa" aria-label="Tipo de mapa">
         <option value="normal">🗺️ Normal</option><option value="claro">⚪ Claro</option>
         <option value="relieve">⛰️ Relieve</option><option value="satelite">🛰️ Satélite</option>
@@ -409,7 +454,7 @@ function montar() {
           <button type="button" class="boton secundario" id="btnImportarIdeas">💡 Importar ideas (archivo)</button>
           <input type="file" id="archivoIdeas" accept=".json,application/json" hidden>
         </p>
-        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 23 (importar ideas)</p>
+        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 24 (frases)</p>
       </section>
       <button type="button" class="boton-lista" id="abrirPanel">☰ Ver la lista</button>
     </div>
@@ -456,6 +501,7 @@ function montar() {
   $("#diaAnt").onclick = () => { if (dia > 1) { dia--; pintar(); } };
   $("#diaSig").onclick = () => { if (dia < 1) dia = 1; else if (dia < (viaje?.numDias || 1)) dia++; pintar(); };
   $("#btnCerrarAsignar").onclick = () => $("#dlgAsignar").close();
+  montarFrases();
   $("#btnImportarIdeas").onclick = () => $("#archivoIdeas").click();
   $("#archivoIdeas").onchange = async (e) => {
     const f = e.target.files[0]; e.target.value = "";
@@ -1037,6 +1083,107 @@ function guardarOrden(lista) {
   const lote = writeBatch(db); let cambios = 0;
   lista.forEach((p, i) => { if (p.orden !== i + 1) { lote.update(doc(db, "viajes", viajeId, "paradas", p.id), { orden: i + 1 }); cambios++; } });
   if (cambios) lote.commit().catch(console.warn);
+}
+
+// =====================================================================
+// Frases del viaje (francés e inglés)
+// =====================================================================
+let FR = { categorias: [], frases: [] }, frasesPropias = [], idiomaF = localStorage.getItem("rumbo-idioma") || "fr";
+let catF = "basico", favoritasF = new Set(JSON.parse(localStorage.getItem("rumbo-favoritas") || "[]"));
+const norm = (t) => (t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9 ]+/g, " ");
+const textoF = (f) => idiomaF === "en" ? f.en : f.fr;
+function oir(f) {
+  if (!("speechSynthesis" in window)) { alert("Este navegador no puede leer en voz alta."); return; }
+  const u = new SpeechSynthesisUtterance(textoF(f).replace(/…/g, ""));
+  u.lang = idiomaF === "en" ? "en-GB" : "fr-FR"; u.rate = .85;
+  const voz = speechSynthesis.getVoices().find(v => v.lang.startsWith(idiomaF === "en" ? "en-GB" : "fr"));
+  if (voz) u.voice = voz;
+  speechSynthesis.cancel(); speechSynthesis.speak(u);
+}
+function enGrande(f) {
+  $("#grandeT").textContent = textoF(f); $("#grandeS").textContent = f.es;
+  $("#grandeOir").onclick = (e) => { e.stopPropagation(); oir(f); };
+  $("#grande").hidden = false;
+}
+function frasesVisibles() {
+  const q = norm($("#buscaFrase").value).trim();
+  const todas = [...FR.frases, ...frasesPropias];
+  return todas.filter(f => {
+    if (!textoF(f)) return false;
+    if (q) { const d = norm(`${f.es} ${f.fr} ${f.en} ${f.nota}`); return q.split(" ").filter(Boolean).every(p => d.includes(p)); }
+    if (catF === "favoritas") return favoritasF.has(f.id);
+    if (catF === "propias") return f.propia;
+    return f.cat === catF;
+  });
+}
+function pintarFrases() {
+  $("#idiomas").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.idioma === idiomaF));
+  const q = $("#buscaFrase").value.trim();
+  const cats = [["favoritas", "⭐ Favoritas"], ...FR.categorias.map(c => [c.id, `${c.icono} ${c.nombre}`]), ["propias", `✏️ Mías (${frasesPropias.length})`]];
+  $("#frasesCats").innerHTML = q ? "" : cats.map(([id, t]) => `<button type="button" data-cat="${id}" aria-pressed="${id === catF}">${t}</button>`).join("");
+  $("#frasesCats").querySelectorAll("button").forEach(b => b.onclick = () => { catF = b.dataset.cat; pintarFrases(); });
+  const vis = frasesVisibles();
+  $("#frasesLista").innerHTML = vis.length ? vis.map((f, i) => `<div class="frase">
+      <div><div class="es">${esc(f.es)}</div><div class="dicho" data-grande="${i}" title="Mostrar en grande">${esc(textoF(f))}</div>
+      ${idiomaF === "fr" && f.pron ? `<div class="pron">[${esc(f.pron)}]</div>` : ""}${f.nota ? `<div class="nota">💡 ${esc(f.nota)}</div>` : ""}</div>
+      <div class="botones-f"><button type="button" data-oir="${i}" aria-label="Escuchar">🔊</button>
+      <button type="button" data-fav="${i}" aria-label="Favorita">${favoritasF.has(f.id) ? "⭐" : "☆"}</button>
+      ${f.propia ? `<button type="button" data-borrar="${i}" aria-label="Borrar">🗑️</button>` : ""}</div></div>`).join("")
+    : `<p class="nota" style="padding:16px">${q ? `No hay frases con «${esc(q)}». Puedes añadirla como frase tuya.` : catF === "favoritas" ? "Toca la ☆ de una frase para tenerla aquí a mano." : catF === "propias" ? "Añade las frases que quieras con «＋ Frase mía». Las verán todos los del viaje." : "No hay frases aquí."}</p>`;
+  const L = $("#frasesLista");
+  L.querySelectorAll("[data-grande]").forEach(b => b.onclick = () => enGrande(vis[+b.dataset.grande]));
+  L.querySelectorAll("[data-oir]").forEach(b => b.onclick = () => oir(vis[+b.dataset.oir]));
+  L.querySelectorAll("[data-fav]").forEach(b => b.onclick = () => {
+    const id = vis[+b.dataset.fav].id; favoritasF.has(id) ? favoritasF.delete(id) : favoritasF.add(id);
+    localStorage.setItem("rumbo-favoritas", JSON.stringify([...favoritasF])); pintarFrases();
+  });
+  L.querySelectorAll("[data-borrar]").forEach(b => b.onclick = () => {
+    const f = vis[+b.dataset.borrar];
+    if (confirm(`¿Borrar «${f.es}» para todos los del viaje?`)) deleteDoc(doc(db, "viajes", viajeId, "frases", f.id));
+  });
+}
+function repasar() {
+  let mazo = frasesVisibles().sort(() => Math.random() - .5), sabidas = 0, vuelta = false;
+  const total = mazo.length, dlg = $("#dlgRepaso");
+  const pinta = () => {
+    $("#repasoTit").textContent = `🃏 Repasar · ${sabidas}/${total}`;
+    const f = mazo[0];
+    if (!f) { $("#repasoCuerpo").innerHTML = `<p>🎉 ¡Las has repasado todas! Repite mañana: así se fija mejor.</p>`; $("#repasoBotones").innerHTML = `<button type="button" class="boton" id="rFin">Terminar</button>`; $("#rFin").onclick = () => dlg.close(); return; }
+    $("#repasoCuerpo").innerHTML = `<div class="tarjeta-repaso" id="rTarjeta"><div class="nota">¿Cómo dirías…?</div><div class="p">${esc(f.es)}</div>
+      ${vuelta ? `<div class="r">${esc(textoF(f))}</div>${idiomaF === "fr" && f.pron ? `<div class="nota">[${esc(f.pron)}]</div>` : ""}` : `<div class="nota">Dilo en voz alta y toca para ver la respuesta</div>`}</div>`;
+    $("#rTarjeta").onclick = () => { vuelta = true; pinta(); };
+    $("#repasoBotones").innerHTML = vuelta
+      ? `<button type="button" class="boton secundario" id="rOir">🔊</button><button type="button" class="boton secundario" id="rOtra">↺ Otra vez</button><button type="button" class="boton" id="rSabia">✓ La sabía</button>`
+      : `<button type="button" class="boton secundario" id="rCerrar">Cerrar</button>`;
+    if (vuelta) {
+      $("#rOir").onclick = () => oir(f);
+      $("#rOtra").onclick = () => { mazo.push(mazo.shift()); vuelta = false; pinta(); };
+      $("#rSabia").onclick = () => { mazo.shift(); sabidas++; vuelta = false; pinta(); };
+    } else $("#rCerrar").onclick = () => dlg.close();
+  };
+  pinta(); dlg.showModal();
+}
+async function montarFrases() {
+  try { FR = await (await fetch("frases.json")).json(); } catch { console.warn("No se pudieron cargar las frases"); }
+  onSnapshot(collection(db, "viajes", viajeId, "frases"), (s) => {
+    frasesPropias = s.docs.map(d => ({ id: d.id, cat: "propias", propia: true, ...d.data() })).sort((a, b) => (a.es || "").localeCompare(b.es || ""));
+    if (!$("#capaFrases").hidden) pintarFrases();
+  });
+  $("#abrirFrases").onclick = () => { $("#capaFrases").hidden = false; pintarFrases(); };
+  $("#btnCerrarFrases").onclick = () => { $("#capaFrases").hidden = true; };
+  $("#grande").onclick = () => { $("#grande").hidden = true; };
+  $("#grandeCerrar").onclick = () => { $("#grande").hidden = true; };
+  $("#buscaFrase").oninput = pintarFrases;
+  $("#idiomas").querySelectorAll("button").forEach(b => b.onclick = () => { idiomaF = b.dataset.idioma; localStorage.setItem("rumbo-idioma", idiomaF); pintarFrases(); });
+  $("#btnRepasar").onclick = repasar;
+  $("#btnFraseMia").onclick = async () => {
+    const es = (prompt("Frase en español:") || "").trim(); if (!es) return;
+    const fr = (prompt("🇫🇷 En francés:") || "").trim();
+    const en = (prompt("🇬🇧 En inglés (opcional):") || "").trim();
+    if (!fr && !en) return;
+    await addDoc(collection(db, "viajes", viajeId, "frases"), { es, fr, en, nota: "", creado: serverTimestamp() });
+    catF = "propias"; pintarFrases();
+  };
 }
 
 // =====================================================================
