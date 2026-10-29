@@ -454,7 +454,7 @@ function montar() {
           <button type="button" class="boton secundario" id="btnImportarIdeas">💡 Importar ideas (archivo)</button>
           <input type="file" id="archivoIdeas" accept=".json,application/json" hidden>
         </p>
-        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 24 (frases)</p>
+        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 25 (consejos por país)</p>
       </section>
       <button type="button" class="boton-lista" id="abrirPanel">☰ Ver la lista</button>
     </div>
@@ -1092,6 +1092,8 @@ let FR = { categorias: [], frases: [] }, frasesPropias = [], idiomaF = localStor
 let catF = "basico", favoritasF = new Set(JSON.parse(localStorage.getItem("rumbo-favoritas") || "[]"));
 const norm = (t) => (t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9 ]+/g, " ");
 const textoF = (f) => idiomaF === "en" ? f.en : f.fr;
+const esF = (f) => idiomaF === "en" && f.esEn ? f.esEn : f.es;            // español (a veces cambia en inglés)
+const notaF = (f) => f.propia ? (f.nota || "") : (idiomaF === "en" ? f.notaEn : f.notaFr) || "";
 function oir(f) {
   if (!("speechSynthesis" in window)) { alert("Este navegador no puede leer en voz alta."); return; }
   const u = new SpeechSynthesisUtterance(textoF(f).replace(/…/g, ""));
@@ -1101,7 +1103,7 @@ function oir(f) {
   speechSynthesis.cancel(); speechSynthesis.speak(u);
 }
 function enGrande(f) {
-  $("#grandeT").textContent = textoF(f); $("#grandeS").textContent = f.es;
+  $("#grandeT").textContent = textoF(f); $("#grandeS").textContent = esF(f);
   $("#grandeOir").onclick = (e) => { e.stopPropagation(); oir(f); };
   $("#grande").hidden = false;
 }
@@ -1110,7 +1112,7 @@ function frasesVisibles() {
   const todas = [...FR.frases, ...frasesPropias];
   return todas.filter(f => {
     if (!textoF(f)) return false;
-    if (q) { const d = norm(`${f.es} ${f.fr} ${f.en} ${f.nota}`); return q.split(" ").filter(Boolean).every(p => d.includes(p)); }
+    if (q) { const d = norm(`${f.es} ${f.esEn || ""} ${f.fr} ${f.en} ${f.notaFr || ""} ${f.notaEn || ""} ${f.nota || ""}`); return q.split(" ").filter(Boolean).every(p => d.includes(p)); }
     if (catF === "favoritas") return favoritasF.has(f.id);
     if (catF === "propias") return f.propia;
     return f.cat === catF;
@@ -1124,8 +1126,8 @@ function pintarFrases() {
   $("#frasesCats").querySelectorAll("button").forEach(b => b.onclick = () => { catF = b.dataset.cat; pintarFrases(); });
   const vis = frasesVisibles();
   $("#frasesLista").innerHTML = vis.length ? vis.map((f, i) => `<div class="frase">
-      <div><div class="es">${esc(f.es)}</div><div class="dicho" data-grande="${i}" title="Mostrar en grande">${esc(textoF(f))}</div>
-      ${idiomaF === "fr" && f.pron ? `<div class="pron">[${esc(f.pron)}]</div>` : ""}${f.nota ? `<div class="nota">💡 ${esc(f.nota)}</div>` : ""}</div>
+      <div><div class="es">${esc(esF(f))}</div><div class="dicho" data-grande="${i}" title="Mostrar en grande">${esc(textoF(f))}</div>
+      ${idiomaF === "fr" && f.pron ? `<div class="pron">[${esc(f.pron)}]</div>` : ""}${notaF(f) ? `<div class="nota">💡 ${esc(notaF(f))}</div>` : ""}</div>
       <div class="botones-f"><button type="button" data-oir="${i}" aria-label="Escuchar">🔊</button>
       <button type="button" data-fav="${i}" aria-label="Favorita">${favoritasF.has(f.id) ? "⭐" : "☆"}</button>
       ${f.propia ? `<button type="button" data-borrar="${i}" aria-label="Borrar">🗑️</button>` : ""}</div></div>`).join("")
@@ -1149,7 +1151,7 @@ function repasar() {
     $("#repasoTit").textContent = `🃏 Repasar · ${sabidas}/${total}`;
     const f = mazo[0];
     if (!f) { $("#repasoCuerpo").innerHTML = `<p>🎉 ¡Las has repasado todas! Repite mañana: así se fija mejor.</p>`; $("#repasoBotones").innerHTML = `<button type="button" class="boton" id="rFin">Terminar</button>`; $("#rFin").onclick = () => dlg.close(); return; }
-    $("#repasoCuerpo").innerHTML = `<div class="tarjeta-repaso" id="rTarjeta"><div class="nota">¿Cómo dirías…?</div><div class="p">${esc(f.es)}</div>
+    $("#repasoCuerpo").innerHTML = `<div class="tarjeta-repaso" id="rTarjeta"><div class="nota">¿Cómo dirías…?</div><div class="p">${esc(esF(f))}</div>
       ${vuelta ? `<div class="r">${esc(textoF(f))}</div>${idiomaF === "fr" && f.pron ? `<div class="nota">[${esc(f.pron)}]</div>` : ""}` : `<div class="nota">Dilo en voz alta y toca para ver la respuesta</div>`}</div>`;
     $("#rTarjeta").onclick = () => { vuelta = true; pinta(); };
     $("#repasoBotones").innerHTML = vuelta
