@@ -212,6 +212,13 @@
   <div class="botones"><button type="button" class="boton secundario" id="btnCerrarSug">Cerrar</button></div>
 </dialog>
 
+<dialog id="dlgAsignar">
+  <h2>¿Qué día hacéis esta ruta?</h2>
+  <p class="nota">Sus paradas se añaden al final del día elegido, antes de volver al hotel.</p>
+  <div id="listaAsignar"></div>
+  <div class="botones"><button type="button" class="boton secundario" id="btnCerrarAsignar">Cancelar</button></div>
+</dialog>
+
 <dialog id="dlgNombre">
   <form method="dialog" id="formNombre">
     <h2>¿Cómo te llamas?</h2>
@@ -226,7 +233,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/fireba
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, updateDoc, onSnapshot, collection, addDoc, writeBatch,
-  arrayUnion, serverTimestamp, deleteField, GeoPoint
+  arrayUnion, serverTimestamp, deleteField, GeoPoint, FieldPath
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 // Configuración web del proyecto Rumbo en Firebase
@@ -285,6 +292,7 @@ const coord = (g) => ({ lat: g.latitude ?? g.lat, lng: g.longitude ?? g.lng });
 
 const CATEGORIA = { visita: "", comida: "🍽️", hotel: "🏨", aeropuerto: "🛫", estacion: "🚉", otro: "⭐" };
 function etiquetaDia(d) {
+  if (d < 1) return "💡 " + ((viaje?.rutasIdea || {})[String(d)] || "Ruta sin día");
   if (!viaje?.fechaInicio) return `Día ${d}`;
   const f = new Date(viaje.fechaInicio + "T12:00:00"); f.setDate(f.getDate() + d - 1);
   return `Día ${d} · ${f.toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" }).replace(/\./g, "")}`;
@@ -376,7 +384,7 @@ function montar() {
         <div class="asa" id="asa" title="Mostrar u ocultar la lista"><span class="raya"></span><button type="button" id="cerrarPanel" aria-label="Ocultar la lista">✕ Ocultar lista</button></div>
         <div class="resumen" id="resumen"></div>
         <ol class="paradas" id="lista"></ol>
-        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 15 (tipos de mapa arreglado)</p>
+        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 18 (salida calculada)</p>
       </section>
       <button type="button" class="boton-lista" id="abrirPanel">☰ Ver la lista</button>
     </div>
@@ -416,9 +424,13 @@ function montar() {
   $("#tipoMapa").onchange = (e) => cambiarMapa(e.target.value);
 
   // Selector de día
-  $("#selDia").onchange = (e) => { dia = +e.target.value; pintar(); };
+  $("#selDia").onchange = (e) => {
+    if (e.target.value === "nueva") { crearRutaIdea(); return; }
+    dia = +e.target.value; pintar();
+  };
   $("#diaAnt").onclick = () => { if (dia > 1) { dia--; pintar(); } };
-  $("#diaSig").onclick = () => { if (dia < (viaje?.numDias || 1)) { dia++; pintar(); } };
+  $("#diaSig").onclick = () => { if (dia < 1) dia = 1; else if (dia < (viaje?.numDias || 1)) dia++; pintar(); };
+  $("#btnCerrarAsignar").onclick = () => $("#dlgAsignar").close();
   // Al cargar cualquier tipo de mapa (también al cambiarlo) se vuelven a poner nuestras capas
   mapa.on("style.load", () => {
     if (mapa.getSource("rutas")) return;
@@ -607,6 +619,25 @@ async function calcularTramo(a, b) {
       sub: c.horaSalida ? `Sale ${c.horaSalida}` : ""
     };
   }
+  // Taxi sin minutos: calcular el trayecto en coche por carretera
+  if (tipo === "taxi" && !(c.minutos > 0)) {
+    try {
+      const clave = `coche:${a.lat.toFixed(6)},${a.lng.toFixed(6)};${b.lat.toFixed(6)},${b.lng.toFixed(6)}`;
+      let r = rutasCache.get(clave);
+      if (!r) {
+        const j = await (await fetch(`https://routing.openstreetmap.de/routed-car/route/v1/driving/${a.lng.toFixed(6)},${a.lat.toFixed(6)};${b.lng.toFixed(6)},${b.lat.toFixed(6)}?overview=full&geometries=geojson`)).json();
+        if (j.code !== "Ok") throw new Error("sin ruta");
+        r = { metros: j.routes[0].distance, segundos: j.routes[0].duration, coords: j.routes[0].geometry.coordinates };
+        rutasCache.set(clave, r);
+      }
+      return { tipo, metros: r.metros, segundos: r.segundos, aPieM: 0, aPieS: 0, lineas: [{ coords: r.coords, tipo, calc: true }],
+        texto: `Taxi · ≈ ${fMin(r.segundos / 60)} · ${fDist(r.metros)} (sin contar atascos)`, sub: esc(c.notas || "") };
+    } catch {
+      const m = distancia(a, b) * 1.4, sg = m / (30000 / 3600);
+      return { tipo, metros: m, segundos: sg, aPieM: 0, aPieS: 0, lineas: [{ coords: recta, tipo, calc: false }],
+        texto: `Taxi · ≈ ${fMin(sg / 60)} · ${fDist(m)} (estimado)`, sub: esc(c.notas || "") };
+    }
+  }
   // bus, metro, tren, tranvía, avión, taxi (a mano)
   const sale = leerHora(c.horaSalida), llega = leerHora(c.horaLlegada);
   const espera = esPublico(tipo) && sale == null ? (c.frecuencia || 0) / 2 : 0;
@@ -634,9 +665,14 @@ async function pintar() {
   const nombres = Object.values(viaje.nombres || {});
   $("#quien").textContent = nombres.length ? `Con ${nombres.join(", ")}` : "";
 
-  $("#selectorDia").hidden = numDias < 2;
+  const ideas = Object.keys(viaje.rutasIdea || {}).map(Number).filter(n => n < 0).sort((a, b) => b - a);
+  if (dia < 1 && !ideas.includes(dia)) dia = 1;
+  $("#selectorDia").hidden = false;
   $("#selDia").innerHTML = Array.from({ length: numDias }, (_, i) =>
-    `<option value="${i + 1}" ${i + 1 === dia ? "selected" : ""}>${etiquetaDia(i + 1)}</option>`).join("");
+      `<option value="${i + 1}" ${i + 1 === dia ? "selected" : ""}>${etiquetaDia(i + 1)}</option>`).join("") +
+    (ideas.length ? `<optgroup label="Rutas sin día">` + ideas.map(n =>
+      `<option value="${n}" ${n === dia ? "selected" : ""}>${esc(etiquetaDia(n))}</option>`).join("") + `</optgroup>` : "") +
+    `<option value="nueva">＋ Nueva ruta sin día…</option>`;
   $("#diaAnt").disabled = dia <= 1;
   $("#diaSig").disabled = dia >= numDias;
 
@@ -669,7 +705,23 @@ async function pintar() {
   if (turno !== pintando) return; // llegó otra actualización mientras calculaba
 
   // Horario
-  const salida = leerHora((viaje.horasSalida || {})[String(dia)]);
+  const salidaManual = leerHora((viaje.horasSalida || {})[String(dia)]);
+  // Salida calculada hacia atrás desde la primera hora fija del día (reserva, vuelo, tren…), redondeada a 5 min
+  let salidaCalculada = null;
+  {
+    let rel = 0, limite = null;
+    const limitar = (x) => { limite = limite == null ? x : Math.min(limite, x); };
+    for (let i = 0; i < delDia.length; i++) {
+      const p = delDia[i];
+      if (p.categoria !== "hotel") { const r = leerHora(p.horaReserva); if (r != null) limitar(r - rel); }
+      rel += p.minutosVisita || 0;
+      const t = tramos[i]; if (!t) break;
+      if (t.fija != null) { limitar(t.fija - rel); break; }
+      rel += Math.round(t.segundos / 60);
+    }
+    if (limite != null) salidaCalculada = Math.floor((((limite % 1440) + 1440) % 1440) / 5) * 5;
+  }
+  const salida = salidaManual ?? salidaCalculada;
   const horas = []; let reloj = salida;
   delDia.forEach((p, i) => {
     if (salida == null) return;
@@ -692,14 +744,40 @@ async function pintar() {
   const aPieM = tramos.reduce((x, t) => x + t.aPieM, 0), aPieS = tramos.reduce((x, t) => x + t.aPieS, 0);
   const totS = tramos.reduce((x, t) => x + t.segundos, 0), visitas = delDia.reduce((x, p) => x + (p.minutosVisita || 0), 0);
   const total = totS / 60 + visitas;
-  $("#resumen").innerHTML = `<div class="fila">
+  $("#resumen").innerHTML = (dia < 1 ? `<div class="fila" style="margin-bottom:6px">
+      <b>${esc(etiquetaDia(dia))}</b>
+      <button type="button" class="boton" id="btnAsignar" ${delDia.length ? "" : "disabled"}>📅 Pasar a un día</button>
+      <button type="button" class="boton secundario" id="btnRenombrarIdea">✏️ Renombrar</button>
+      <button type="button" class="boton peligro" id="btnBorrarIdea" style="margin:0">🗑️ Borrar ruta</button>
+    </div>` : "") + `<div class="fila">
       <span><b>${delDia.length}</b> paradas</span>
       <span>${fDist(aPieM)} a pie (${fMin(aPieS / 60)})</span>
       ${totS - aPieS > 59 ? `<span>${fMin((totS - aPieS) / 60)} en transporte</span>` : ""}
       <span>Total ${fMin(total)}${salida != null ? `, fin hacia las ${fHora(salida + total)}` : ""}</span>
-      <label>Salida <input type="time" id="horaSalida" value="${salida != null ? fHora(salida) : ""}"></label>
+      <label>Salida${salidaManual == null && salidaCalculada != null ? " (calculada)" : ""} <input type="time" id="horaSalida" value="${salida != null ? fHora(salida) : ""}"></label>
+      ${salidaManual != null && salidaCalculada != null ? `<button type="button" class="boton secundario" id="salidaAuto" title="Calcular la hora sola">⟲ Calcular sola</button>` : ""}
     </div>`;
+  if (dia < 1) {
+    $("#btnAsignar").onclick = () => abrirAsignar(delDia.length);
+    $("#btnRenombrarIdea").onclick = () => {
+      const n = prompt("Nuevo nombre de la ruta:", (viaje.rutasIdea || {})[String(dia)] || "");
+      if (n && n.trim()) updateDoc(doc(db, "viajes", viajeId), new FieldPath("rutasIdea", String(dia)), n.trim());
+    };
+    $("#btnBorrarIdea").onclick = async () => {
+      if (!confirm(`¿Borrar «${(viaje.rutasIdea || {})[String(dia)]}» y sus ${delDia.length} paradas para todos?`)) return;
+      const lote = writeBatch(db);
+      delDia.forEach(p => lote.delete(doc(db, "viajes", viajeId, "paradas", p.id)));
+      lote.update(doc(db, "viajes", viajeId), new FieldPath("rutasIdea", String(dia)), deleteField());
+      const idea = dia; dia = 1; await lote.commit(); pintar();
+    };
+  }
   $("#horaSalida").onchange = (e) => updateDoc(doc(db, "viajes", viajeId), { [`horasSalida.${dia}`]: e.target.value });
+  const auto = $("#salidaAuto");
+  if (auto) auto.onclick = () => updateDoc(doc(db, "viajes", viajeId), { [`horasSalida.${dia}`]: "" });
+  if (salidaManual != null && salidaCalculada != null && salidaManual > salidaCalculada) {
+    $("#resumen").insertAdjacentHTML("beforeend",
+      `<p class="nota" style="color:#C0392B;margin:6px 0 0">⚠️ Para llegar a tiempo, salid como tarde a las ${fHora(salidaCalculada)}. Pulsa «⟲ Calcular sola» para usarla.</p>`);
+  }
 
   // Lista
   const lista = $("#lista");
@@ -774,7 +852,9 @@ async function pintar() {
 function rellenarDias(sel, actual) {
   const n = viaje.numDias || 1;
   sel.innerHTML = Array.from({ length: n }, (_, i) => `<option value="${i + 1}" ${i + 1 === actual ? "selected" : ""}>${etiquetaDia(i + 1)}</option>`).join("");
-  sel.parentElement.hidden = n < 2;
+  const ideas = Object.keys(viaje.rutasIdea || {}).map(Number).filter(x => x < 0).sort((a, b) => b - a);
+  sel.innerHTML += ideas.map(d => `<option value="${d}" ${d === actual ? "selected" : ""}>${esc(etiquetaDia(d))}</option>`).join("");
+  sel.parentElement.hidden = n < 2 && !ideas.length;
 }
 function abrirNueva(punto, nombre) {
   editando = null; nuevoPunto = punto;
@@ -866,6 +946,44 @@ function guardarOrden(lista) {
 }
 
 // =====================================================================
+// Rutas sin día (ideas)
+// =====================================================================
+async function crearRutaIdea() {
+  const nombre = prompt("Nombre de la ruta sin día (p. ej. «Soho · Orange Passport»):");
+  if (!nombre || !nombre.trim()) { pintar(); return; }
+  const actuales = Object.keys(viaje.rutasIdea || {}).map(Number);
+  const n = Math.min(0, ...actuales) - 1;
+  await updateDoc(doc(db, "viajes", viajeId), new FieldPath("rutasIdea", String(n)), nombre.trim());
+  dia = n; pintar();
+}
+function abrirAsignar(cuantas) {
+  const caja = $("#listaAsignar");
+  caja.innerHTML = Array.from({ length: viaje.numDias || 1 }, (_, i) => {
+    const d = i + 1, n = paradas.filter(p => (p.dia || 1) === d).length;
+    return `<button type="button" class="opcion" data-asignar="${d}"><span class="horas">${esc(etiquetaDia(d))}</span><small>${n === 1 ? "1 parada" : n + " paradas"}</small></button>`;
+  }).join("");
+  caja.querySelectorAll("[data-asignar]").forEach(b => b.onclick = async () => {
+    const destino = +b.dataset.asignar, idea = dia;
+    const ruta = paradas.filter(p => p.dia === idea).sort((x, y) => x.orden - y.orden);
+    const lista = paradas.filter(p => (p.dia || 1) === destino).sort((x, y) => x.orden - y.orden);
+    const pos = lista.length >= 2 && lista.at(-1).categoria === "hotel" ? lista.length - 1 : lista.length;
+    lista.splice(pos, 0, ...ruta);
+    const lote = writeBatch(db);
+    lista.forEach((p, i) => {
+      const ref = doc(db, "viajes", viajeId, "paradas", p.id);
+      if (p.dia === idea) lote.update(ref, { dia: destino, orden: i + 1 });
+      else if (p.orden !== i + 1) lote.update(ref, { orden: i + 1 });
+    });
+    lote.update(doc(db, "viajes", viajeId), new FieldPath("rutasIdea", String(idea)), deleteField());
+    $("#dlgAsignar").close();
+    dia = destino;
+    await lote.commit();
+    pintar();
+  });
+  $("#dlgAsignar").showModal();
+}
+
+// =====================================================================
 // Tramos: cómo vais de una parada a la siguiente
 // =====================================================================
 const TIPOS_TRAMO = ["andando", "pasaje", "bus", "metro", "tren", "tranvia", "avion", "taxi", "ruta"];
@@ -939,7 +1057,8 @@ function pintarFormTramo() {
       <div class="fila2">${campo("horaSale", "Sale", c.horaSalida, "time")}${campo("horaLlega", "Llega", c.horaLlegada, "time")}</div>
       <div class="fila2">${campo("minutos", "Minutos de trayecto", c.minutos || "", "number")}${avion ? "" : campo("frecuencia", "Pasa cada… (min)", c.frecuencia || "", "number")}</div>`;
   } else if (c.tipo === "taxi") {
-    html = campo("minutos", "Minutos de trayecto", c.minutos || "", "number");
+    html = `<p class="nota">Déjalo vacío y lo calculo yo por carretera (sin contar atascos). Pon los minutos solo si ya sabes lo que tardáis.</p>` +
+      campo("minutos", "Minutos (vacío = calcularlo)", c.minutos || "", "number");
   } else if (c.tipo === "ruta") {
     html = `<p class="nota">Los pasos en orden: andar, bus, transbordo a metro…</p>` + c.pasos.map((p, i) => `
       <div class="paso" data-paso="${i}">
