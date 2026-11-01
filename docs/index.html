@@ -338,14 +338,48 @@ const BASE_CATEGORIAS = [["visita", "📍 Visita"], ["comida", "🍽️ Comida"]
 const ICONOS_CATEGORIA = ["🛍️", "🎁", "📚", "☕", "🍰", "🍺", "🍷", "🥐", "🎭", "🎨", "🏛️", "⛪", "🌳", "🎡", "🎄", "📸", "🧸", "🎵", "⚽", "🏪", "🧀", "⭐", "❤️"];
 /** Icono de un tipo de parada (de los de siempre o de los creados en el viaje) */
 const iconoCat = (c) => viaje?.categoriasPropias?.[c]?.icono ?? CATEGORIA[c] ?? "";
+/** Editar o borrar tipos propios (al borrar, sus paradas pasan a otro tipo). */
+async function gestionarTipos() {
+  const propias = Object.entries(viaje?.categoriasPropias || {});
+  if (!propias.length) return;
+  const lista = propias.map(([id, c], i) => `${i + 1}. ${c.icono} ${c.nombre} (${paradas.filter(p => p.categoria === id).length} paradas)`).join("\n");
+  const n = parseInt(prompt(`¿Qué tipo quieres cambiar? Escribe su número:\n\n${lista}`), 10);
+  if (!n || n < 1 || n > propias.length) return;
+  const [id, c] = propias[n - 1];
+  const accion = (prompt(`«${c.icono} ${c.nombre}»: escribe E para editarlo o B para borrarlo`) || "").trim().toUpperCase();
+  const ref = doc(db, "viajes", viajeId);
+  if (accion === "E") {
+    const nombre = (prompt("Nombre:", c.nombre) || "").trim(); if (!nombre) return;
+    const icono = (prompt("Icono (copia uno o escribe el tuyo):\n" + ICONOS_CATEGORIA.join("  "), c.icono) || c.icono).trim();
+    await updateDoc(ref, new FieldPath("categoriasPropias", id), { icono, nombre });
+    viaje.categoriasPropias[id] = { icono, nombre };
+  } else if (accion === "B") {
+    const usadas = paradas.filter(p => p.categoria === id);
+    const destinos = [...BASE_CATEGORIAS.map(([v, t]) => [v, t]), ...propias.filter(([o]) => o !== id).map(([o, x]) => [o, `${x.icono} ${x.nombre}`])];
+    let destino = "visita";
+    if (usadas.length) {
+      const m = parseInt(prompt(`Tiene ${usadas.length} paradas. ¿A qué tipo las paso? Escribe su número:\n\n` + destinos.map(([, t], i) => `${i + 1}. ${t}`).join("\n")), 10);
+      if (!m || m < 1 || m > destinos.length) return;
+      destino = destinos[m - 1][0];
+    } else if (!confirm(`¿Borrar «${c.nombre}»?`)) return;
+    const lote = writeBatch(db);
+    usadas.forEach(p => lote.update(doc(db, "viajes", viajeId, "paradas", p.id), { categoria: destino }));
+    lote.update(ref, new FieldPath("categoriasPropias", id), deleteField());
+    await lote.commit();
+    delete viaje.categoriasPropias[id];
+  }
+}
+
 function rellenarCategorias(sel, actual) {
   const propias = Object.entries(viaje?.categoriasPropias || {}).sort((a, b) => (a[1].nombre || "").localeCompare(b[1].nombre || ""));
   sel.innerHTML = BASE_CATEGORIAS.map(([v, t]) => `<option value="${v}">${t}</option>`).join("") +
     propias.map(([id, c]) => `<option value="${esc(id)}">${esc(c.icono || "⭐")} ${esc(c.nombre || id)}</option>`).join("") +
-    `<option value="__nuevo">＋ Nuevo tipo…</option>`;
+    `<option value="__nuevo">＋ Nuevo tipo…</option>` +
+    (propias.length ? `<option value="__gestionar">⚙️ Editar o borrar tipos…</option>` : "");
   sel.value = actual || "visita";
   sel.dataset.anterior = sel.value;
   sel.onchange = async () => {
+    if (sel.value === "__gestionar") { sel.value = sel.dataset.anterior; await gestionarTipos(); rellenarCategorias(sel, sel.dataset.anterior); return; }
     if (sel.value !== "__nuevo") { sel.dataset.anterior = sel.value; return; }
     const nombre = (prompt("Nombre del nuevo tipo de parada (p. ej. «Tiendas»):") || "").trim();
     if (!nombre) { sel.value = sel.dataset.anterior; return; }
@@ -454,7 +488,7 @@ function montar() {
           <button type="button" class="boton secundario" id="btnImportarIdeas">💡 Importar ideas (archivo)</button>
           <input type="file" id="archivoIdeas" accept=".json,application/json" hidden>
         </p>
-        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 26 (pronunciación inglés)</p>
+        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 27 (editar tipos)</p>
       </section>
       <button type="button" class="boton-lista" id="abrirPanel">☰ Ver la lista</button>
     </div>
