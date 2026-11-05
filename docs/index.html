@@ -400,11 +400,17 @@ function rellenarCategorias(sel, actual) {
     rellenarCategorias(sel, id);
   };
 }
-function etiquetaDia(d) {
+function etiquetaDiaSinNombre(d) {
   if (d < 1) return "💡 " + ((viaje?.rutasIdea || {})[String(d)] || "Ruta sin día");
   if (!viaje?.fechaInicio) return `Día ${d}`;
   const f = new Date(viaje.fechaInicio + "T12:00:00"); f.setDate(f.getDate() + d - 1);
   return `Día ${d} · ${f.toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" }).replace(/\./g, "")}`;
+}
+/** Día con su nombre si lo tiene: «Día 10 · jue, 7 ene · Marylebone» */
+function etiquetaDia(d) {
+  const base = etiquetaDiaSinNombre(d);
+  const n = d >= 1 ? ((viaje?.nombresDias || {})[String(d)] || "").trim() : "";
+  return n ? `${base} · ${n}` : base;
 }
 const ICONO = { avion: "✈️", andando: "🚶", pasaje: "🪜", bus: "🚌", metro: "🚇", tren: "🚆", tranvia: "🚊", taxi: "🚕", barco: "⛴️", ruta: "🔀" };
 const NOMBRE = { avion: "Avión", andando: "Andando", pasaje: "Pasaje", bus: "Bus", metro: "Metro", tren: "Tren", tranvia: "Tranvía", taxi: "Taxi", barco: "Barco", ruta: "Varios pasos" };
@@ -499,7 +505,7 @@ function montar() {
           <button type="button" class="boton secundario" id="btnImportarIdeas">💡 Importar ideas (archivo)</button>
           <input type="file" id="archivoIdeas" accept=".json,application/json" hidden>
         </p>
-        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 29 (Google Maps)</p>
+        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 30 (nombres de días)</p>
       </section>
       <button type="button" class="boton-lista" id="abrirPanel">☰ Ver la lista</button>
     </div>
@@ -911,7 +917,11 @@ async function pintar() {
   const aPieM = tramos.reduce((x, t) => x + t.aPieM, 0), aPieS = tramos.reduce((x, t) => x + t.aPieS, 0);
   const totS = tramos.reduce((x, t) => x + t.segundos, 0), visitas = delDia.reduce((x, p) => x + (p.minutosVisita || 0), 0);
   const total = totS / 60 + visitas;
-  $("#resumen").innerHTML = (dia < 1 ? `<div class="fila" style="margin-bottom:6px">
+  const nombreDia = dia >= 1 ? ((viaje.nombresDias || {})[String(dia)] || "") : "";
+  $("#resumen").innerHTML = (dia >= 1 ? `<div class="fila" style="margin-bottom:6px">
+      <b>${esc(nombreDia)}</b>
+      <button type="button" class="boton secundario" id="btnNombreDia">✏️ ${nombreDia ? "Cambiar nombre" : "Nombre del día"}</button>
+    </div>` : "") + (dia < 1 ? `<div class="fila" style="margin-bottom:6px">
       <b>${esc(etiquetaDia(dia))}</b>
       <button type="button" class="boton" id="btnAsignar" ${delDia.length ? "" : "disabled"}>📅 Pasar a un día</button>
       <button type="button" class="boton secundario" id="btnRenombrarIdea">✏️ Renombrar</button>
@@ -924,6 +934,11 @@ async function pintar() {
       <label>Salida${salidaManual == null && salidaCalculada != null ? " (calculada)" : ""} <input type="time" id="horaSalida" value="${salida != null ? fHora(salida) : ""}"></label>
       ${salidaManual != null && salidaCalculada != null ? `<button type="button" class="boton secundario" id="salidaAuto" title="Calcular la hora sola">⟲ Calcular sola</button>` : ""}
     </div>`;
+  if (dia >= 1) $("#btnNombreDia").onclick = async () => {
+    const n = prompt(`Nombre del ${etiquetaDiaSinNombre(dia)} (p. ej. «Marylebone»).\nSale en el selector de días para todos. Déjalo vacío para quitarlo.`, nombreDia);
+    if (n === null) return;
+    await updateDoc(doc(db, "viajes", viajeId), new FieldPath("nombresDias", String(dia)), n.trim() ? n.trim() : deleteField());
+  };
   if (dia < 1) {
     $("#btnAsignar").onclick = () => abrirAsignar(delDia.length);
     $("#btnRenombrarIdea").onclick = () => {
