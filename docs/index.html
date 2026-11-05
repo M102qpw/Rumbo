@@ -137,6 +137,14 @@
   .barra-modo p { margin: 2px 0 8px; font-size: .88rem; color: var(--suave); }
   .barra-modo .botones { margin-top: 6px; }
   /* ---------- Frases ---------- */
+  .btn-google { position: fixed; top: 140px; right: 12px; z-index: 4; border: 0; border-radius: 999px; padding: 9px 14px;
+    background: var(--superficie); box-shadow: 0 2px 8px rgba(0,0,0,.18); font-weight: 600; cursor: pointer; }
+  @media (min-width: 900px) { .btn-google { right: auto; left: 12px; top: auto; bottom: 110px; } }
+  .maplibregl-popup-content { border-radius: 14px; padding: 12px 14px; font-family: inherit; }
+  .popup-sitio b { font-size: 1rem; } .popup-sitio .nota { margin: 2px 0 8px; }
+  .popup-sitio a, .popup-sitio button { display: block; width: 100%; margin-top: 6px; text-align: center; border-radius: 999px; padding: 7px 10px; font: inherit; font-weight: 600; }
+  .popup-sitio a { background: var(--oliva-claro); color: inherit; text-decoration: none; }
+  .popup-sitio button { border: 1.5px solid var(--linea); background: transparent; cursor: pointer; }
   .capa-frases { position: fixed; inset: 0; z-index: 20; background: var(--papel); display: flex; flex-direction: column; }
   .capa-frases[hidden] { display: none; }
   .frases-cab { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--linea); flex-wrap: wrap; }
@@ -238,6 +246,7 @@
   <div class="botones"><button type="button" class="boton secundario" id="btnCerrarSug">Cerrar</button></div>
 </dialog>
 
+<button type="button" class="btn-google" id="btnExplorarGoogle" title="Abrir esta zona en Google Maps: tiendas, fotos y horarios">🔎 Explorar en Google Maps</button>
 <div class="capa-frases" id="capaFrases" hidden>
   <div class="frases-cab">
     <h2>🗣️ Frases del viaje</h2>
@@ -490,7 +499,7 @@ function montar() {
           <button type="button" class="boton secundario" id="btnImportarIdeas">💡 Importar ideas (archivo)</button>
           <input type="file" id="archivoIdeas" accept=".json,application/json" hidden>
         </p>
-        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 28 (documentos)</p>
+        <p class="atribucion">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · OpenFreeMap · Rutas a pie: FOSSGIS · Búsqueda: Photon<br>Versión 29 (Google Maps)</p>
       </section>
       <button type="button" class="boton-lista" id="abrirPanel">☰ Ver la lista</button>
     </div>
@@ -538,6 +547,10 @@ function montar() {
   $("#diaSig").onclick = () => { if (dia < 1) dia = 1; else if (dia < (viaje?.numDias || 1)) dia++; pintar(); };
   $("#btnCerrarAsignar").onclick = () => $("#dlgAsignar").close();
   montarFrases();
+  $("#btnExplorarGoogle").onclick = () => {
+    const c = mapa.getCenter(), z = Math.round(Math.min(21, Math.max(3, mapa.getZoom())));
+    window.open(`https://www.google.com/maps/@?api=1&map_action=map&center=${c.lat.toFixed(6)},${c.lng.toFixed(6)}&zoom=${z}`, "_blank", "noopener");
+  };
   $("#abrirCarpeta").onclick = () => {
     const url = viaje.carpetaUrl;
     if (url && !confirm("¿Abrir la carpeta del viaje?\n\n(Cancelar = cambiar el enlace de la carpeta)")) { pedirCarpeta(); return; }
@@ -577,6 +590,9 @@ function montar() {
     if (modo) { clicEnModo({ lat: e.lngLat.lat, lng: e.lngLat.lng }); return; }
     const toc = mapa.queryRenderedFeatures([[e.point.x - 14, e.point.y - 14], [e.point.x + 14, e.point.y + 14]], { layers: ["paradas"] });
     if (toc.length) { const p = paradas.find(x => x.id === toc[0].properties.id); if (p) abrirEditar(p); return; }
+    // ¿Has tocado un sitio del mapa (tienda, bar, museo…)?
+    const sitio = sitioEn(e.point);
+    if (sitio) { mostrarSitio(sitio); return; }
     abrirNueva({ lat: e.lngLat.lat, lng: e.lngLat.lng }, "");
   });
 
@@ -1127,6 +1143,38 @@ function guardarOrden(lista) {
   const lote = writeBatch(db); let cambios = 0;
   lista.forEach((p, i) => { if (p.orden !== i + 1) { lote.update(doc(db, "viajes", viajeId, "paradas", p.id), { orden: i + 1 }); cambios++; } });
   if (cambios) lote.commit().catch(console.warn);
+}
+
+// =====================================================================
+// Sitios del mapa (tiendas, bares, museos…) → ver en Google Maps o añadir
+// =====================================================================
+const CLASES_DE_ZONA = new Set(["city", "town", "village", "hamlet", "suburb", "neighbourhood", "quarter", "isolated_dwelling", "locality", "country", "state", "province", "continent", "island"]);
+const TIPOS_SITIO = { restaurant: "Restaurante", fast_food: "Comida rápida", cafe: "Cafetería", bar: "Bar", pub: "Pub", bakery: "Panadería",
+  ice_cream: "Heladería", museum: "Museo", gallery: "Galería", arts_centre: "Galería", theatre: "Teatro", cinema: "Cine", attraction: "Atracción",
+  viewpoint: "Mirador", hotel: "Alojamiento", hostel: "Alojamiento", park: "Parque", garden: "Jardín", place_of_worship: "Iglesia o templo",
+  monument: "Monumento", memorial: "Monumento", supermarket: "Supermercado", convenience: "Supermercado", books: "Librería", clothes: "Ropa",
+  gift: "Regalos", toys: "Juguetes", jewelry: "Joyería", chemist: "Farmacia", pharmacy: "Farmacia", department_store: "Grandes almacenes",
+  mall: "Centro comercial", station: "Estación", railway: "Estación", shop: "Tienda", lodging: "Alojamiento" };
+let popupSitio = null;
+function sitioEn(pt) {
+  const f = mapa.queryRenderedFeatures([[pt.x - 14, pt.y - 14], [pt.x + 14, pt.y + 14]]).find(f =>
+    f.geometry?.type === "Point" && f.properties?.name && f.properties?.class && !CLASES_DE_ZONA.has(f.properties.class) &&
+    !["paradas", "numeros", "rutas", "marcas"].includes(f.layer?.id) && f.properties.id == null);
+  if (!f) return null;
+  const sub = f.properties.subclass || f.properties.class;
+  return { nombre: f.properties.name, tipo: TIPOS_SITIO[sub] || TIPOS_SITIO[f.properties.class] || sub.replace(/_/g, " "),
+           lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0] };
+}
+function mostrarSitio(s) {
+  popupSitio?.remove();
+  const url = `https://www.google.com/maps/search/${encodeURIComponent(s.nombre)}/@${s.lat.toFixed(6)},${s.lng.toFixed(6)},18z`;
+  const div = document.createElement("div");
+  div.className = "popup-sitio";
+  div.innerHTML = `<b>${esc(s.nombre)}</b><div class="nota">${esc(s.tipo)}</div>
+    <a href="${url}" target="_blank" rel="noopener">📷 Ver en Google Maps</a>
+    <button type="button">＋ Añadir a Rumbo</button>`;
+  div.querySelector("button").onclick = () => { popupSitio.remove(); abrirNueva({ lat: s.lat, lng: s.lng }, s.nombre); };
+  popupSitio = new maplibregl.Popup({ closeButton: true, maxWidth: "260px", offset: 12 }).setLngLat([s.lng, s.lat]).setDOMContent(div).addTo(mapa);
 }
 
 // =====================================================================
